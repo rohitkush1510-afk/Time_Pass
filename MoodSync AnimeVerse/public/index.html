@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoodSync AnimeVision — Your Mood, Your Anime</title>
+  <meta name="description" content="Anime streaming platform with real-time facial mood detection">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg?v=2">
+
+  <!-- CSS (immutable-cached via ?v= tag — bump the number when files change) -->
+  <link rel="stylesheet" href="/css/variables.css?v=2">
+  <link rel="stylesheet" href="/css/global.css?v=4">
+  <link rel="stylesheet" href="/css/components.css?v=2">
+  <link rel="stylesheet" href="/css/home.css?v=2">
+  <link rel="stylesheet" href="/css/scanner.css?v=2">
+  <link rel="stylesheet" href="/css/recommendations.css?v=2">
+  <link rel="stylesheet" href="/css/player.css?v=2">
+  <link rel="stylesheet" href="/css/detail.css?v=2">
+  <link rel="stylesheet" href="/css/profile.css?v=2">
+  <link rel="stylesheet" href="/css/responsive.css?v=2">
+
+  <!-- Apply saved theme before first paint to avoid a flash -->
+  <script>
+    (function () {
+      var t = localStorage.getItem('theme') ||
+        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+
+  <!-- Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Display font — start fetching before CSS requests it -->
+  <link rel="preload" href="/assets/fonts/yoruka.otf?v=2" as="font" type="font/otf" crossorigin>
+
+  <!-- face-api.js loads on demand via MoodMeter.loadModels() (scanner pages only).
+       hls.js for episode streaming (deferred: never blocks first paint) -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
+</head>
+<body>
+  <!-- Splash Intro -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash-row splash-row-top">
+      <div class="splash-box"></div><div class="splash-box"></div><div class="splash-box"></div><div class="splash-box"></div><div class="splash-box"></div>
+    </div>
+    <div class="splash-row splash-row-bottom">
+      <div class="splash-box"></div><div class="splash-box"></div><div class="splash-box"></div><div class="splash-box"></div><div class="splash-box"></div>
+    </div>
+    <span class="splash-word">MoodSync</span>
+  </div>
+
+  <!-- Katarenai — background music, loops continuously -->
+  <audio id="bgm" loop preload="auto">
+    <source src="https://www.myinstants.com/media/sounds/katarenai.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Floating Logo (top-left) -->
+  <div class="logo-wrapper">
+    <a href="#/" class="logo-inner" aria-label="MoodSync home">
+      <img src="/assets/logo.svg?v=2" alt="" class="logo-img">
+      <span class="logo-text">MoodSync</span>
+    </a>
+  </div>
+
+  <!-- Burger Button (top-right) -->
+  <div class="burger-wrapper">
+    <button class="bgm-toggle" id="bgm-toggle" aria-label="Toggle background music" title="Toggle music">
+      <svg class="icon-sound" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      <svg class="icon-mute" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    </button>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 14.2A8.8 8.8 0 0 1 9.8 3.4a8.8 8.8 0 1 0 10.8 10.8Z"/></svg>
+    </button>
+    <button class="burger-btn" id="nav-hamburger" aria-label="Open menu">
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+  </div>
+
+  <!-- Menu Panel (dark rounded dropdown) -->
+  <div class="menu-panel" id="mobile-nav">
+    <nav aria-label="Primary">
+      <a href="#/" class="menu-link nav-link" data-page="home">Home</a>
+      <a href="#/scan" class="menu-link nav-link" data-page="scan">Scan Mood</a>
+      <a href="#/search" class="menu-link nav-link" data-page="search">Discover</a>
+      <a href="#/profile" class="menu-link nav-link" data-page="profile">Profile</a>
+    </nav>
+    <div class="menu-contact">
+      <a href="#/profile" id="nav-profile" class="nav-profile menu-email">
+        <span class="nav-avatar" id="nav-avatar">&#128100;</span>
+        <span id="nav-username">Your local profile</span>
+      </a>
+      <button class="cta-btn menu-cta-btn" onclick="window.navigateTo('#/scan')">
+        <span class="cta-btn-bg"></span>
+        <span class="cta-btn-text">Scan my mood</span>
+        <span class="cta-btn-circle">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13L13 5M13 5H6M13 5V12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Area (SPA pages render here) -->
+  <main id="app" class="main-content"></main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <h2 class="footer-mark">Your mood,<br />your anime.</h2>
+        <p class="footer-tagline">Real-time mood matching for anime — scan, feel, watch.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="#/">Home</a>
+        <a href="#/scan">Scan Mood</a>
+        <a href="#/search">Discover</a>
+        <a href="#/profile">Profile</a>
+      </div>
+      <div class="footer-col">
+        <h4>Privacy</h4>
+        <span>On-device processing</span>
+        <span>No facial data stored</span>
+        <span>Local-only history</span>
+      </div>
+      <div class="footer-col">
+        <h4>About</h4>
+        <span>MoodSync AnimeVision</span>
+        <span>Powered by Lazy Bros</span>
+        <span>Made with care</span>
+      </div>
+    </div>
+    <div class="footer-base">
+      <p>&copy; 2026 MoodSync AnimeVision</p>
+      <p>Powered by Lazy Bros</p>
+    </div>
+  </footer>
+
+  <!-- App Scripts (deferred: download in parallel, run in order after parse) -->
+  <script src="/js/ui.js?v=2" defer></script>
+  <script src="/js/user-store.js?v=2" defer></script>
+  <script src="/js/mood-mapping.js?v=2" defer></script>
+  <script src="/js/mood-meter-core.js?v=2" defer></script>
+  <script src="/js/mood-fuser.js?v=2" defer></script>
+  <script src="/js/mood-scanner.js?v=2" defer></script>
+  <script src="/js/anime-api.js?v=2" defer></script>
+  <script src="/js/recommendations.js?v=2" defer></script>
+  <script src="/js/anime-detail.js?v=2" defer></script>
+  <script src="/js/player.js?v=2" defer></script>
+  <script src="/js/search.js?v=2" defer></script>
+  <script src="/js/profile.js?v=2" defer></script>
+  <script src="/js/app.js?v=2" defer></script>
+
+  <script>
+    // Splash intro — slide away then remove, background music loops
+    window.addEventListener('DOMContentLoaded', function () {
+      var audio = document.getElementById('bgm');
+      var toggle = document.getElementById('bgm-toggle');
+      var iconSound = toggle ? toggle.querySelector('.icon-sound') : null;
+      var iconMute  = toggle ? toggle.querySelector('.icon-mute')  : null;
+
+      function applyMuteVisual() {
+        if (!toggle) return;
+        var muted = audio.muted || audio.volume === 0;
+        if (iconSound) iconSound.style.display = muted ? 'none'  : '';
+        if (iconMute)  iconMute.style.display  = muted ? ''      : 'none';
+        toggle.classList.toggle('muted', muted);
+      }
+
+      // Start music (loop + low volume)
+      if (audio) {
+        audio.volume = 0.35;
+        applyMuteVisual();
+        var playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function () {
+            // Autoplay blocked — play on first click/keypress
+            var handler = function () {
+              audio.play();
+              document.removeEventListener('click', handler);
+              document.removeEventListener('keydown', handler);
+            };
+            document.addEventListener('click', handler);
+            document.addEventListener('keydown', handler);
+          });
+        }
+      }
+
+      // Mute / unmute toggle
+      if (toggle) {
+        toggle.onclick = function () {
+          audio.muted = !audio.muted;
+          applyMuteVisual();
+          if (!audio.muted && audio.paused) audio.play();
+        };
+      }
+
+      // Splash stays only during splash animation, then remove — music keeps playing
+      setTimeout(function () {
+        var s = document.getElementById('splash');
+        if (s) s.remove();
+      }, 1800);
+    });
+  </script>
+</body>
+</html>

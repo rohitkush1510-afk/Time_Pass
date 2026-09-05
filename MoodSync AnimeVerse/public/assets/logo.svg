@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="imperialGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e6c96a" />
+      <stop offset="55%" stop-color="#d4af37" />
+      <stop offset="100%" stop-color="#b8860b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Crown -->
+  <path d="M17 11 L19.5 5 L24 9 L28.5 5 L31 11 Q24 13.5 17 11 Z"
+        fill="url(#imperialGold)" />
+
+  <!-- Swan wings — left -->
+  <path d="M21 27.5 C14 26.5 8.5 21.5 6 13.5 C10.5 17 14.5 18 18.5 16.5"
+        fill="none" stroke="url(#imperialGold)" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20.5 32 C13 31.5 7 26.5 3.5 18.5 C9 23.5 14 24.5 19 23"
+        fill="none" stroke="url(#imperialGold)" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Swan wings — right -->
+  <path d="M27 27.5 C34 26.5 39.5 21.5 42 13.5 C37.5 17 33.5 18 29.5 16.5"
+        fill="none" stroke="url(#imperialGold)" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M27.5 32 C35 31.5 41 26.5 44.5 18.5 C39 23.5 34 24.5 29 23"
+        fill="none" stroke="url(#imperialGold)" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Halo ring + play -->
+  <circle cx="24" cy="31" r="7.5" fill="rgba(212,175,55,0.12)" stroke="url(#imperialGold)" stroke-width="2.2"/>
+  <polygon points="22,27.8 22,34.2 27.4,31" fill="url(#imperialGold)"/>
+</svg>
