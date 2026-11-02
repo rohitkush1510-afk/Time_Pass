@@ -1,0 +1,164 @@
+.player-page, .anime-detail-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-xl) 0;
+}
+
+.player-info {
+  padding: var(--space-lg) 0;
+}
+
+/* Player wrapper (rendered by player.js) */
+.player-wrapper {
+  position: relative;
+  aspect-ratio: 16/9;
+  background-color: #000;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.player-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.player-wrapper video {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Loading / status overlay */
+.player-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  background: rgba(17, 17, 17, 0.82);
+  color: var(--cream);
+  text-align: center;
+  padding: var(--space-lg);
+  z-index: 2;
+}
+.player-overlay p {
+  max-width: 42ch;
+  font-size: 0.92rem;
+  color: var(--cream-muted);
+}
+.player-overlay .loader-spinner {
+  border-color: rgba(244, 241, 232, 0.2);
+  border-top-color: var(--sky);
+}
+
+/* Quality switcher */
+.quality-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+.quality-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.25s var(--ease-luxe);
+}
+.quality-btn:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+.quality-btn.active {
+  background: var(--surface-dark);
+  color: var(--cream);
+  border-color: var(--surface-dark);
+}
+
+/* Episode rail */
+.text-muted { color: var(--text-muted); font-weight: 400; font-size: 0.9em; }
+
+.episode-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+}
+.episode-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 7px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.25s var(--ease-luxe);
+}
+.episode-btn:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+.episode-btn.active {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: var(--on-accent);
+  box-shadow: var(--shadow-glow);
+}
+.episode-btn .ep-num {
+  font-weight: 700;
+  min-width: 2ch;
+  text-align: right;
+}
+.episode-btn .ep-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  opacity: 0.75;
+}
+.episode-btn .ep-filler {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(217, 155, 19, 0.18);
+  color: #8a5c00;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+}
+
+/* Anime Details — styles live in css/detail.css */
+
+/* Feedback section (rendered by player.js) */
+.feedback-section {
+  margin-top: var(--space-xl);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+.feedback-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: var(--space-md);
+}
+
+.feedback-btns {
+  display: flex;
+  gap: var(--space-md);
+}
+.feedback-btns button {
+  padding: var(--space-sm) var(--space-lg);
+}

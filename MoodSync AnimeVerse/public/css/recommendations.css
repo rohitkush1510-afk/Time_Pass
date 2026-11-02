@@ -1,0 +1,140 @@
+.recommendations-page {
+  padding: var(--space-xl) 0;
+}
+
+/* Mood banner (rendered by recommendations.js) */
+.mood-banner {
+  position: relative;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: clamp(32px, 5vw, 52px) clamp(24px, 4vw, 40px);
+  margin-bottom: var(--space-xl);
+  text-align: center;
+  box-shadow: var(--shadow-modal);
+}
+.mood-banner h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  margin-bottom: var(--space-sm);
+}
+.mood-banner p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+/* Mood hero emoji in recommendations header */
+.reco-mood-hero {
+  margin-bottom: var(--space-md);
+}
+.reco-mood-emoji {
+  font-size: 4rem;
+  display: inline-block;
+  animation: recoEmojiFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 16px color-mix(in srgb, var(--reco-color, var(--accent-primary)) 35%, transparent));
+}
+@keyframes recoEmojiFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.05); }
+}
+
+/* Confidence bar in recommendations header */
+.reco-confidence-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 300px;
+  margin: 0 auto var(--space-lg);
+}
+.reco-conf-track {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  overflow: hidden;
+}
+.reco-conf-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  transition: width 1s var(--ease-luxe);
+}
+.reco-conf-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.btn-rescan {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  background: var(--surface-dark);
+  border: none;
+  color: var(--cream);
+  padding: 12px 30px;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s var(--ease-luxe);
+  animation: recoBtnPulse 3.5s ease-in-out infinite;
+}
+.btn-rescan::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(117, 197, 222, 0.25), transparent);
+  transition: all 0.6s;
+}
+.btn-rescan:hover {
+  background: #000000;
+  color: #ffffff;
+  transform: translateY(-3px);
+  animation-play-state: paused;
+  box-shadow: var(--shadow-glow-strong);
+}
+.btn-rescan:hover::before { left: 100%; transition: all 0.7s ease-in-out; }
+.btn-rescan:active {
+  transform: translateY(1px) scale(0.97);
+  animation: none;
+}
+/* Gentle breathing glow so the action button draws the eye */
+@keyframes recoBtnPulse {
+  0%, 100% { box-shadow: var(--shadow-card), 0 0 0 0 rgba(117, 197, 222, 0); }
+  50% { box-shadow: var(--shadow-card), 0 0 0 8px rgba(117, 197, 222, 0); }
+}
+/* Spin the refresh glyph on hover */
+.btn-rescan:hover .reco-rescan-glyph {
+  transform: rotate(360deg);
+}
+.reco-rescan-glyph {
+  display: inline-block;
+  transition: transform 0.6s var(--ease-luxe);
+}
+
+/* Staggered entrance for recommendations pagination buttons */
+#reco-pagination .page-btn {
+  opacity: 0;
+  animation: recoPageIn 0.5s var(--ease-luxe) forwards;
+}
+#reco-pagination .page-btn:nth-child(1) { animation-delay: 0.05s; }
+#reco-pagination .page-btn:nth-child(2) { animation-delay: 0.12s; }
+#reco-pagination .page-btn:nth-child(3) { animation-delay: 0.19s; }
+#reco-pagination .page-btn:nth-child(4) { animation-delay: 0.26s; }
+#reco-pagination .page-btn:nth-child(5) { animation-delay: 0.33s; }
+#reco-pagination .page-btn:nth-child(6) { animation-delay: 0.40s; }
+#reco-pagination .page-btn:nth-child(7) { animation-delay: 0.47s; }
+@keyframes recoPageIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

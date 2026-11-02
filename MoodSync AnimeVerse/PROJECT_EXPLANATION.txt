@@ -1,0 +1,1351 @@
+================================================================================
+ MOODSYNC ANIMEVERSE — THE "BUILD IT YOURSELF" GUIDE
+ Written for absolute beginners: every line explained, every file connected.
+================================================================================
+
+This guide assumes you know ONLY the very basics of JavaScript, HTML, and
+Node.js. It explains the app line by line, file by file, and shows how each
+file is connected to the others. The goal: you can REBUILD this whole app from
+scratch using only this document, without ever opening the code.
+
+HOW TO USE THIS GUIDE
+---------------------
+- Read it top to bottom ONCE to get the big picture.
+- Then, to build, use the "BUILD ORDER" section (section 11) which tells you
+  the exact order to write files, and follow each file's LINE-BY-LINE section
+  below it.
+- Words in CAPITALS like `window` or `require` are explained the first time.
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+ 0. The 10 words you must know first (the vocabulary lesson)
+ 1. What this app is, in one sentence
+ 2. The architecture — the 3 parts and how they connect
+ 3. What each FOLDER and FILE is for (the map)
+ 4. The special "window." trick (how JS files talk to each other)
+ 5. The data contract (a promise all files keep)
+ 6. LINE-BY-LINE: Server files
+   6.1 server/server.js
+   6.2 server/routes/anime.js
+   6.3 server/services/anilist-api.js
+   6.4 server/services/miruro-api.js
+   6.5 DeepFace sidecar + fuser (optional)
+ 7. LINE-BY-LINE: The single HTML page
+   7.1 public/index.html
+ 8. LINE-BY-LINE: The shared frontend helpers
+   8.1 public/js/ui.js
+   8.2 public/js/user-store.js
+   8.3 public/js/anime-api.js
+   8.4 public/js/mood-mapping.js
+ 9. LINE-BY-LINE: The mood-detection (camera) files
+   9.1 public/js/mood-meter-core.js
+   9.2 public/js/mood-scanner.js
+10. LINE-BY-LINE: The page (screen) files + CSS
+   10.1 public/js/app.js  (the router — the brain)
+   10.2 public/js/recommendations.js
+   10.3 public/js/anime-detail.js
+   10.4 public/js/player.js
+   10.5 public/js/search.js
+   10.6 public/js/profile.js
+   10.7 public/css/* (all the styling)
+11. BUILD ORDER — rebuild it from nothing, step by step
+12. How to test and run
+13. Common problems and their fixes
+14. Glossary (quick recap of every word used)
+
+================================================================================
+0. THE 10 WORDS YOU MUST KNOW FIRST
+================================================================================
+ 1. BROWSER = the program you use to look at websites (Chrome, Edge, Firefox).
+ 2. SERVER = a program that runs on your computer (Node.js) and waits for
+    requests. Think of it as a waiter in a restaurant.
+ 3. REQUEST / RESPONSE = your browser asks the server for something (REQUEST);
+    the server returns data (RESPONSE). Like ordering food and getting it.
+ 4. API = a set of rules for talking to another program. "Give me anime" is an
+    API call. APIs return DATA (usually JSON).
+ 5. JSON = a way to write data that both computers and humans can read.
+    Example:  { "name": "Frieren", "score": 9 }   -- braces {} = one object.
+ 6. HTML = the structure of a webpage (headings, buttons, images). Built from
+    tags like <h1>, <button>, <div>.
+ 7. CSS = the styling (colors, sizes, layout, animations). Tied to HTML by
+    class names and id names.
+ 8. JavaScript (JS) = the logic. Makes things happen: clicking, fetching data,
+    changing the page. Runs in the BROWSER (frontend).
+ 9. Node.js = a program that runs JavaScript on the SERVER instead of in the
+    browser. This project's backend is written in Node.
+10. FRONTEND vs BACKEND = frontend = everything the user sees (public/ folder,
+    runs in browser). Backend = the server (server/ folder, runs in Node).
+    They talk to each other over HTTP ("fetch").
+
+-----------------------------------------------------------------------------
+1. WHAT THIS APP IS (one sentence)
+   A website where you let your webcam see your face, it guesses your mood
+   (happy, sad, angry...), then shows and plays anime that match that mood.
+   All your saved data stays on YOUR computer (no accounts, no signup).
+
+-----------------------------------------------------------------------------
+2. THE ARCHITECTURE — THE 3 PARTS AND HOW THEY CONNECT
+-----------------------------------------------------------------------------
+Imagine the app is a restaurant:
+
+  PART A  = the DINING ROOM (the browser / public/ folder)
+           This is everything the user sees and touches. HTML + CSS + JS.
+           The JS here (like app.js) decides which "screen" to show.
+
+  PART B  = the WAITER / KITCHEN (the server / server/ folder)
+           The browser NEVER talks to the outside world directly. It asks the
+           server (the waiter), who goes and fetches anime data. This hides
+           messy external formats and avoids security/technical problems
+           called "CORS".
+
+PART C  = the INGREDIENT SUPPLIERS (external websites)
+            Free anime data websites the server talks to:
+              - Miruro API (mirurotvapi.vercel.app/api): a third-party wrapper
+                that MIRRORS AniList's metadata for "new/latest anime". Used as
+                the primary source.
+              - AniList (graphql.anilist.co): gives anime info (search, scores,
+                genres, details). No key needed. Used as a backup when Miruro is
+                down, and for genre-only (mood) searches Miruro cannot do.
+            (The old Consumet/HiAnime provider was removed — see section 6.4.)
+
+HOW THE PARTS CONNECT (draw this in your head):
+
+   Browser (public/ JS)
+      |  fetch('/api/anime/search?genres=Comedy')     <- asks the server
+      v
+   Server (routes/anime.js)
+      |  "I'll try Miruro first."
+      |  "If that fails (or it's a genre-only mood search),
+      |   I'll try AniList."          <- this is called FAILOVER
+      v
+   Miruro  <----->  AniList (external)
+
+  IMPORTANT: The CAMERA MOOD DETECTION normally never uses the server at all.
+  It happens 100% inside the browser:  webcam -> face-api.js -> mood label.
+  (EXCEPTION: an optional DeepFace sidecar — a separate Python program — can
+  be turned on to double-check the mood. See "DEEPFACE SIDECAR + FUSER".)
+  Without DeepFace your face never leaves your computer.
+
+-----------------------------------------------------------------------------
+3. WHAT EACH FOLDER AND FILE IS FOR (THE MAP)
+-----------------------------------------------------------------------------
+Project folder:
+  package.json        Lists the pieces (dependencies) the server needs and the
+                      commands to start the app. Written by hand OR "npm init".
+  package-lock.json   Auto-created by "npm install". DO NOT edit by hand.
+  .env, .env.example  Settings (communication details). .env is private.
+  .gitignore          Tells git which files to NOT save (node_modules, .env).
+  README.md           The friendly user manual (how to run).
+  PROJECT_EXPLANATION.txt   This file.
+
+  node_modules/       ALL downloaded libraries. Created by "npm install".
+                      Huge. Never touch it. Never edit it.
+
+  server/             The BACKEND (Part B). Written in Node.js.
+    server.js              THE ENTRY POINT. Starts everything. First file to read.
+    routes/anime.js        Handles all requests that start with /api/anime.
+    routes/mood.js         Handles /api/mood (DeepFace sidecar proxy).
+    services/anilist-api.js  Knows how to talk to the AniList website.
+    services/miruro-api.js   Knows how to talk to the Miruro API wrapper.
+    services/deepface-client.js  Proxies camera frames to the Python DeepFace
+                          sidecar (only when DEEPFACE_ENABLED=true).
+    deepface/             The optional Python DeepFace sidecar program.
+
+  public/             The FRONTEND (Part A). Everything the browser shows.
+    index.html            The ONE and ONLY webpage (a "single page app").
+    css/                  All the styling files.
+    js/                   All the browser JavaScript files.
+    vendor/               face-api.min.js — the face-detection library, saved
+                          locally so the app works even offline.
+    models/               The trained AI "brains" face-api needs. Downloadable
+                          weight files for faces and expressions.
+    assets/               Images and fonts (logo, the yoruka font).
+
+-----------------------------------------------------------------------------
+4. THE SPECIAL "window." TRICK (very important, read this twice)
+-----------------------------------------------------------------------------
+Every browser has a hidden big object called `window` that holds everything
+global. Any file can attach a value to it, and ANY OTHER file can read it.
+
+This project's pattern:
+  In public/js/ui.js you write:      window.UI = { ...functions... }
+  In ANY other file you write:       window.UI.showToast('Hi')
+        and it works! Why? Because once ui.js runs (and it loads EARLY,
+        before the others), `window.UI` exists for everyone else to use.
+
+So each JS file basically says "hello world, my name is window.X, and here are
+the functions I know."
+
+The names used: window.UI, window.UserStore, window.AnimeAPI, window.MoodMapping,
+window.MoodMeter, window.MoodScanner, window.Recommendations, window.AnimeDetail,
+window.Player, window.Search, window.Profile, window.App.
+
+Plus two shared "global variables":
+  window.APP_STATE      Holds { currentMood: "...", moodConfidence: 0.87 }.
+                        The currently detected mood. Any page can read/write it.
+  window.navigateTo     A function that changes the web address (hash) to move
+                        between screens. Defined in app.js.
+
+WHY script ORDER matters: index.html loads the JS files in a specific order.
+app.js MUST be last because it "boots" the app (calls window.App.init()).
+If a file loads before its helper, window.X won't exist yet and crashes.
+
+-----------------------------------------------------------------------------
+5. THE DATA CONTRACT (a promise every file keeps)
+-----------------------------------------------------------------------------
+Both data sources (AniList and Miruro) return DIFFERENT messy formats. To make
+the whole app simple, the server NORMALIZES every anime into the SAME shape
+before sending it to the browser. This is the "contract":
+
+  A list response looks like:
+    {
+      data: [ item, item, ... ],                          // the anime
+      pagination: { current_page: 1, last_visible_page: 5, has_next_page: true }
+    }
+
+  A single item (one anime) looks like:
+    {
+      id: "12345",                    // a text (string) id
+      title: "Frieren: Beyond Journey's End",
+      title_english: "Frieren...",
+      images: { jpg: { large_image_url: "http://...", image_url: "http://..." } },
+      score: 8.9,                     // 0 to 10
+      episodes: 28,
+      type: "TV",                     // TV, Movie, OVA...
+      status: "Finished Airing",
+      season: "fall",  year: 2023,
+      rating: null,                   // always null (kept for the future)
+      synopsis: "Plain text about the anime",
+      genres: [ { name: "Adventure" }, ... ],
+      trailer: "https://youtube.com/..." or null,   // detail pages only
+      banner_image: "http://..." or null,
+      duration: 24,                   // minutes, detail only
+      studio: "Madhouse"              // detail only
+    }
+
+Because EVERY provider produces this same shape, the browser JS never has to
+care WHO answered. That is the whole point of the server.
+
+IMPORTANT id rule: AniList (and Miruro, which mirrors AniList) uses numbers
+("12345"). The browser treats ids as just text. The id also keys the existing
+"Watch Now on Miruro" links on the detail page.
+
+================================================================================
+6. LINE-BY-LINE: SERVER FILES  (the backend / waiter)
+================================================================================
+
+---------------------------------------------------------------
+6.1  server/server.js   — THE ENTRY POINT (starts the app)
+---------------------------------------------------------------
+This is the file you run with "node server/server.js". First file in the
+back-end. Read it from the top.
+
+  require('dotenv').config();
+    "require" = import/load another module. dotenv reads the .env file into
+    process.env (a big object of settings). Do this FIRST so later lines can
+    use the settings. (dotenv: makes environment variables available.)
+
+  const express = require('express');
+    Load the "express" library. Express is the tool that lets us define
+    "when the browser asks for X, do Y". We store it in a variable called
+    express. (We'll call express() below to CREATE the server.)
+
+  const cors = require('cors');
+    Load "cors". CORS = a browser security rule. This add-on removes the
+    restriction so our own frontend can talk to our own server freely.
+
+  const compression = require('compression');
+    Load "compression". It compresses (zips) the data before sending it, so
+    big anime lists download ~5-10x faster. (Gzip.)
+
+  const path = require('path');
+    Load Node's "path" helper. It helps join folder paths correctly no matter
+    the operating system. (e.g. building the path to the public folder.)
+
+  const animeRoutes = require('./routes/anime');
+    Load OUR OWN file routes/anime.js (the "../" means "from this folder").
+    We put it in the variable animeRoutes. We'll attach it to the server soon.
+
+  const app = express();
+    CALL express() to create the actual server object. Everything below adds
+    features (called "middleware") to this `app`.
+
+  const PORT = process.env.PORT || 3069;
+    Read the PORT setting from .env. If it's not set, USE 3069 (the fallback
+    number after ||). "||" means "or": use the left if it's real, else right.
+
+  app.use(cors());
+    "Use the cors middleware on every request." Now browsers can call us.
+
+  app.use(compression());
+    "Compress every response." Big JSON payloads shrink a lot.
+
+  app.use(express.json({ limit: '5mb' }));
+    Tell express to understand JSON bodies in requests, up to 5 megabytes.
+    (So we can receive data typed by the user.)
+
+  app.get('/api/health', (req, res) => {
+      res.json({ status: 'ok', uptime: process.uptime() });
+  });
+    Define a ROUTE. When the browser requests GET /api/health, run this
+    function. req = the request, res = the response. res.json(...) sends back
+    JSON. process.uptime() = seconds the server has been running. Useful to
+    check "is the server alive?".
+
+  app.use('/api/anime', animeRoutes);
+    "For any URL starting with /api/anime, hand it to routes/anime.js."
+    So /api/anime/search and /api/anime/123 are handled by that file.
+
+  const publicPath = path.join(__dirname, '../public');
+    Build the full path to the public folder. __dirname = the folder this
+    current file (server.js) is in; going up one level (../) then into public.
+
+  app.use(express.static(publicPath, {
+      etag: true, lastModified: true,
+      setHeaders(res, filePath) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          ...
+      }
+  }));
+    Serve the files in public/ (index.html, the JS, CSS, images) directly to
+    the browser. The setHeaders part adds "do NOT cache" headers during
+    development, so when you edit a file and refresh, you see changes
+    immediately instead of an old saved copy.
+
+  app.get('*', (req, res) => { ... });
+    THE CATCH-ALL / SPA FALLBACK. `*` means "any URL that reached here".
+    If the path does NOT start with /api/, send index.html.
+    Otherwise send a 404 error.
+    Why? The app uses "hash routing" (see app.js). Every screen lives inside
+    ONE HTML page. When the browser goes to /anime/123 and refreshes, the
+    server just sends index.html again, and the JS reads the hash to draw the
+    right screen. This is what makes a single-page app work.
+
+  app.listen(PORT, () => { console.log(...); });
+    Start the server, listening on PORT for requests. The function runs one
+    time when it's ready, printing the URL to open.
+
+----------------------
+6.2  server/routes/anime.js   — ALL /api/anime/* requests
+----------------------
+Its job: try the primary data source (Miruro), and if that fails, try the
+backup (AniList). It does NOT know HOW either source works — it just calls
+a shared "call" function and passes along the name of what to do.
+
+  const express = require('express');
+  const router = express.Router();
+    Create a "router" — a mini collection of routes that we can plug into the
+    server later. (server.js attached it at /api/anime.)
+
+  const miruroApi = require('../services/miruro-api');
+  const anilistApi = require('../services/anilist-api');
+    Load our provider files that talk to the outside websites. (The old HiAnime
+    provider was removed — it was the only one with episode/streaming data, so
+    the /episodes and /sources routes were removed too.)
+
+  const PROVIDERS = [ { api: miruroApi, source: 'miruro' },
+                      { api: anilistApi, source: 'anilist' } ];
+    An ordered list of providers — Miruro first (primary), AniList second
+    (backup). "source" is just the label that goes into the response header.
+
+  const COOLDOWN_MS = 60 * 1000;
+  const downUntil = { miruro: 0, anilist: 0 };
+  const downReported = { miruro: false, anilist: false };
+    A tiny circuit breaker: when a provider throws, we remember a "don't try
+    again until" time. This stops us from re-hitting a down provider (with all
+    its retries/backoff) on every single request — after one failure it is
+    skipped for a minute instead. downReported just makes sure each outage is
+    logged once, not once per endpoint.
+
+  async function serveAnimeData(res, name, args = {}) {
+    Define a helper that tries each provider in order. `async` means it can
+    pause and wait for network calls. `name` = what to do (search, detail,...).
+    `args` = the arguments for it. `args = {}` means "default to empty object".
+
+    let lastError;
+      A variable to remember the last error, so if ALL providers fail we can
+      report something useful.
+
+    for (const { api, source } of PROVIDERS) {
+      Loop over the providers in order: Miruro, then AniList. "continue"
+      skips a provider that is disabled or still in cooldown (downUntil).
+
+        try {
+            const data = await api.call(name, args);
+      try/catch = "attempt this; if it throws an error, catch it."
+      await = "pause until the network call finishes."
+
+            const emptyGenreSearch = name === 'search' && !(args.q || '')
+                && args.genres && !(data.data && data.data.length);
+      Miruro can only search by TITLE, not by genre. So a genre-only
+      (mood) search always comes back empty from Miruro. When that happens
+      we treat it like a failure and fall through (`continue`) to AniList,
+      which CAN filter by genre.
+
+            if (!res.headersSent) res.set('X-Anime-Source', source);
+            return data;
+      If it worked, we set a header X-Anime-Source showing who answered
+      (useful for debugging) and RETURN the data.
+
+        } catch (error) {
+            downUntil[source] = Date.now() + COOLDOWN_MS;
+            lastError = error;
+            if (!downReported[source]) {
+                downReported[source] = true;
+                console.warn(`[anime] ${source} is down (${error.message}) - falling back to another provider`);
+            }
+        }
+      If it threw, set the provider's cooldown (so it is skipped for a minute),
+      remember the error, and log that it is DOWN — but only announce each
+      provider's outage ONCE (downReported flag), so the console isn't spammed
+      with the same warning for every endpoint. Then the loop falls through to
+      the next provider (the FAILOVER). When a provider later succeeds again,
+      we log "recovered" and clear the flag.
+    }
+
+    throw lastError || new Error('No anime provider available');
+      If we get here, ALL providers failed. "throw" = raise an error. Give the
+      caller either the last real error, or a generic message.
+
+    Then come all the routes (GET /search, /trending, /seasonal, and finally
+    /:id).
+    Example — /search:
+
+  router.get('/search', async (req, res) => {
+      try {
+          const data = await serveAnimeData(res, 'search', {
+              q: req.query.q || '',
+              genres: req.query.genres || '',
+              page: Number(req.query.page) || 1,
+              limit: Number(req.query.limit) || 24
+          });
+          res.json(data);
+      } catch (error) {
+          res.status(error.status || 502).json({ error: 'Failed to search anime', message: error.message });
+      }
+  });
+      When browser GETs /api/anime/search?genres=Comedy&page=2:
+        req.query = the query string turned into an object
+                  = { genres: 'Comedy', page: '2' }
+        We pass those to serveAnimeData with the name 'search'.
+        On success, res.json(data) sends back the normalized anime.
+        On failure, send a 502 ("bad gateway") JSON error.
+
+  IMPORTANT ROUTE ORDER: /:id MUST be the LAST route. `:id` matches ANY url
+  (it's a wildcard). If it were first, /search and /trending would be treated
+  as the id and never reached. So keep /:id at the bottom.
+
+  module.exports = router;
+    Make this router available to server.js (which used app.use on it).
+
+---------------------------------------------------------------
+6.3  server/services/anilist-api.js   — talks to AniList
+---------------------------------------------------------------
+AniList uses GraphQL. You don't need to know GraphQL deeply, but here's the
+idea: instead of fetching whole pages, GraphQL lets you ask for EXACTLY the
+fields you want, in one request. The file has four parts:
+
+  PART 1 — Setup + the raw request function:
+
+  const BASE_URL = (process.env.ANILIST_GRAPHQL_URL || 'https://graphql.anilist.co').replace(/\/+$/, '');
+    The website address. Use the .env value if set, else the default. The
+    .replace(/\/+$/, '') just removes any trailing slashes.
+
+  const TIMEOUT_MS = Number(process.env.ANILIST_TIMEOUT_MS || 15000);
+  const RETRIES = 2;
+    TIMEOUT_MS = how long (ms) to wait before giving up (15 seconds).
+    RETRIES = how many extra times to try after the first attempt.
+
+  const REQUEST_HEADERS = { 'Content-Type': 'application/json', 'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 ...' };
+    HTTP headers sent with every request. AniList sits behind a protection
+    called Cloudflare, which blocks requests that look like they come from a
+    computer (Node's default User-Agent). Sending a normal browser User-Agent
+    avoids that block.
+
+  const cache = new Map();
+  const CACHE_TTL = 5 * 60 * 1000;
+  const CACHE_TTL_LONG = 24 * 60 * 60 * 1000;
+    cache = an in-memory storage for answers we already got.
+    5 * 60 * 1000 = 5 minutes in milliseconds. CACHE_TTL_LONG = 24 hours.
+    If someone asks again within the time limit, we return the saved answer
+    instantly instead of re-fetching. Saves AniList from abuse and makes the
+    app faster.
+
+  function isEnabled() { return Boolean(BASE_URL); }
+    Returns true if BASE_URL is set. Routes use this to decide whether to
+    even try AniList.
+
+  async function callAniList(query, variables = {}, ttl = CACHE_TTL) {
+      const cacheKey = JSON.stringify({ query, variables });
+      const cached = cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < ttl) return cached.data;
+    Turn the request into a text "key". Look it up in cache. If we have a
+    match that isn't too old, return the saved data right away (no network).
+
+      let lastError;
+      for (let attempt = 0; attempt <= RETRIES; attempt++) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    Loop the retries. An AbortController lets us cancel the request if it
+    takes too long. setTimeout sets a timer that aborts after TIMEOUT_MS.
+
+          try {
+              const response = await fetch(BASE_URL, { method: 'POST', headers: REQUEST_HEADERS,
+                  body: JSON.stringify({ query, variables }), signal: controller.signal });
+    `fetch` = the browser/Node command to make an HTTP request. We POST a JSON
+    body containing the GraphQL query and variables. signal ties the request
+    to the abort controller.
+
+              if (response.status === 429) { ... throw ... }
+    If AniList says "You asked too fast" (429), read how long to wait and
+    throw an error that includes that wait time.
+
+              if (!response.ok) throw new Error(`AniList API returned ${response.status}`);
+              const payload = await response.json();
+              if (payload.errors && payload.errors.length) { throw new Error(...); }
+    response.ok = was the request successful (2xx)? response.json() = turn the
+    JSON text into a JS object. GraphQL can ALSO return errors in the body, so
+    we check payload.errors too.
+
+              cache.set(cacheKey, { data: payload.data, timestamp: Date.now() });
+              return payload.data;
+    Save the answer to cache and return just the .data part.
+
+          } catch (error) {
+              lastError = error;
+              if (attempt < RETRIES) {
+                  const delayMs = error.rateLimited ? Math.min(...) : 800 * (attempt + 1);
+                  await new Promise(r => setTimeout(r, delayMs));
+              }
+          } finally {
+              clearTimeout(timer);
+          }
+      }
+      throw lastError;
+    On an error, remember it. If we still have attempts left, WAIT (backoff)
+    and try again. finally always clears the timer. After the loop, if we
+    never succeeded, throw the last error.
+
+  PART 2 — The GraphQL queries (what fields we ask for):
+
+  MEDIA_FIELDS is a reusable fragment asking for id, title, cover image,
+  score, episode count, format, status, season, year, description, genres,
+  trailer.  PAGE_QUERY uses it to get a LIST of anime (with search, genres,
+  status, sort). DETAIL_QUERY uses it to get ONE anime plus banner, duration,
+  studio.
+
+  PART 3 — Normalization helpers (turn messy data into our contract):
+
+  decodeEntities(str): turns HTML codes like &amp; into & and &#39; into '.
+  cleanText(str): removes HTML tags from the synopsis, makes plain text.
+  toScore(avg): AniList gives 0-100; we convert to 0-10 by dividing by 10.
+  mapFormat / mapStatus: turn AniList's uppercase codes into friendly words
+      (e.g. RELEASING -> "Currently Airing").
+  toTrailerUrl(trailer): builds a YouTube URL from the trailer data.
+
+  normalizeItem(media): THE function that produces the exact "contract" item
+      (section 5) from one AniList result. Picks the best title, best image,
+      and maps every field.
+
+  normalizePage(raw, page, limit): takes the list result and builds
+      { data: [...], pagination: {...} } per the contract.
+
+  PART 4 — The ADAPTERS: one function per thing the app can ask for:
+
+  search({q, genres, page, limit}): builds the GraphQL variables and calls.
+          Note: genre_in uses OR meaning — asking for "Comedy,Slice of Life"
+          gets MORE results, not fewer.
+  trending: sorts by trending, returns 10.
+  seasonal: returns currently-airing, by popularity, 10.
+  genres: returns a fixed static list of genre names (no network call).
+  detail({id}): fetches ONE anime + extra fields. Requires a numeric id.
+          Caches for the longer 24h TTL.
+
+  Then a tiny dispatcher:
+
+  async function call(name, args) {
+      const adapter = ADAPTERS[name];
+      if (!adapter) throw new Error(`No AniList adapter named "${name}"`);
+      return adapter(args);
+  }
+    Routes call serveAnimeData -> this `call('search', args)`. It looks up the
+    right adapter by name and runs it.
+
+  module.exports = { isEnabled, call };
+    Only expose these two functions to the rest of the app.
+
+  NOTE: There are NO episodes/sources adapters here on purpose. AniList has no
+  streaming data (and the old HiAnime provider that supplied it was removed),
+  so the /episodes and /sources routes were removed from anime.js.
+
+---------------------------------------------------------------
+6.4  server/services/miruro-api.js   — talks to the Miruro API wrapper
+---------------------------------------------------------------
+Same STRUCTURE as anilist-api.js (setup -> request with retry/cache ->
+normalizers -> adapters -> dispatcher -> module.exports), but simpler because
+Miruro's wrapper is a normal REST API (GET URLs) that ALREADY returns
+AniList-shaped data (because Miruro is an AniList-driven site).
+
+Highlights that differ:
+  callMiruro(pathAndQuery, ttl): builds a full URL (BASE_URL + path) and GETs
+      it with retries + cache. Handles 429 (rate limit) backoff. Unwraps the
+      common { success, results: {...} } envelope so a plain page object
+      remains.
+  toScore: handles both 0-10 and 0-100 score styles, normalized to 0-10.
+  normalizePage(raw, page, limit): tolerates the many shapes a wrapper might
+      send (array, results, data, animes) — finds whichever array holds items.
+  ADAPTERS map to the app's interface: search (NOTE: Miruro can only search by
+      TITLE, not genre — genre-only mood searches fall through to AniList),
+      trending, seasonal (uses the wrapper's /recent = "currently airing /
+      this season"), and detail (/info/{id}, with a search-match fallback).
+  NOTE: Miruro has NO episode/streaming adapters here — it is metadata only.
+  It is the PRIMARY provider, with AniList as the fallback.
+
+---------------------------------------------------------------
+6.5  DEEPFACE SIDECAR + FUSER  (optional mood booster)
+---------------------------------------------------------------
+This is the one place mood detection can leave the browser.
+
+  server/deepface/deepface_service.py — a SEPARATE Python program
+      (FastAPI) that wraps the DeepFace library (TensorFlow). It exposes:
+        GET  /health   -> is it up and is the model loaded?
+        POST /emotion  -> give it a base64 photo, get back the 7-emotion
+                          distribution (same keys face-api uses).
+      To run it:  pip install -r requirements.txt ; python deepface_service.py
+      It listens on 127.0.0.1:5001 by default. Also has optional per-emotion
+      "fine-tune" multipliers via a request field.
+
+  server/services/deepface-client.js — the Node helper that talks to the
+      Python service. Only active when DEEPFACE_ENABLED=true in .env.
+      analyzeEmotion(base64): POSTs the frame, returns normalized scores.
+
+  server/routes/mood.js — publishes two endpoints:
+        POST /api/mood/deepface   receives a browser frame, proxies it to the
+                                  Python sidecar.
+        GET  /api/mood/deepface-status   reports whether fusion is on.
+      Returns 503 when disabled/unreachable so the browser falls back cleanly.
+
+  public/js/mood-fuser.js — window.MoodFuser, the CUSTOM FINE-TUNED FUSER.
+      The browser's scan first gets face-api scores (face-api.js), then — only
+      if the sidecar is on — gets DeepFace scores for the same face. The fuser
+      merges them:
+        * a per-emotion WEIGHTED GEOMETRIC MEAN (each model dominates the
+          emotions it is more reliable at),
+        * FINE-TUNE multipliers (boost under-detected sad/fearful/disgusted),
+        * a "rare-negative confirmation" boost — if BOTH independent models
+          agree a negative emotion is present, it is promoted above face-api's
+          neutral bias,
+        * then a softmax so the result is a valid probability distribution.
+      The final fused { top, confidence, scores } flows into the normal mood
+      mapping. When DeepFace is off/unreachable, the fuser is skipped and the
+      scan uses face-api alone — everything still works.
+
+================================================================================
+7. LINE-BY-LINE: THE SINGLE HTML PAGE
+================================================================================
+
+---------------------------------------------------------------
+7.1  public/index.html   — the one and only webpage
+---------------------------------------------------------------
+  <!DOCTYPE html><html lang="en"><head>...
+    Standard opening. <head> = invisible settings area.
+
+  <meta charset="UTF-8"> : how characters are encoded (so emoji work).
+  <meta name="viewport" ...> : makes it look right on phones.
+  <title>...</title> : the browser tab text.
+  <meta name="description" ...> : text used by search engines.
+
+  <link rel="icon" ... href="/assets/logo.svg"> : the little browser-tab icon.
+
+  All the <link rel="stylesheet" href="/css/..."> lines:
+    Load the CSS files IN ORDER. Order matters because later CSS can override
+    earlier CSS. List: variables (the design system), global, components,
+    home, scanner, recommendations, player, detail, profile, responsive.
+
+  An inline <script> block right in the head:
+      (function () {
+          var t = localStorage.getItem('theme') ||
+            (window.matchMedia(...prefers dark...) ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', t);
+      })();
+    Runs BEFORE the page paints. It reads the saved theme (light/dark) from
+    localStorage, or checks the OS preference, and sets a data-theme attribute
+    on the <html> element. This prevents a flash of the wrong color. (The
+    function runs immediately because of the () at the end — an IIFE.)
+
+  Font links: load the "Inter" web font from Google, and preload the local
+  yoruka.otf font.
+
+  <script src="/vendor/face-api.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/.../hls.min.js" defer></script>
+    Load the face-detection library (local, offline-safe) and hls.js (streams
+    videos; loaded from a CDN). "defer" means "download this now but don't run
+    it until the page is done parsing" — so it never blocks the first paint.
+
+  <body> ... the visible stuff.
+
+  .splash div: a little "MoodSync" intro animation overlay.
+  #toast-container: empty div where pop-up notifications ("toasts") appear.
+  .logo-wrapper: the floating top-left logo (clicking it goes #/).
+  .burger-wrapper: the top-right theme-toggle button and hamburger menu button.
+  .menu-panel (#mobile-nav): the dropdown navigation menu with links to
+      Home, Scan Mood, Discover, Profile.
+
+  <main id="app" class="main-content"></main>
+    THE MOST IMPORTANT ELEMENT. Every "screen" of the app is drawn INSIDE this
+    main tag by the router (app.js). It starts empty; JavaScript fills it.
+
+  <footer class="footer"> ... </footer>
+    The bottom-of-page links and text.
+
+  Then all the app's JS, each deferred, IN THIS ORDER:
+      ui.js, user-store.js, mood-mapping.js, mood-meter-core.js,
+      mood-scanner.js, anime-api.js, recommendations.js, anime-detail.js,
+      player.js, search.js, profile.js, app.js (LAST!)
+    Each defines its window.X object. app.js must be last because it calls
+    window.App.init() to start the whole app.
+
+  A final small <script>: when the page finishes loading (DOMContentLoaded),
+  wait 1.8 seconds then remove the splash overlay.
+
+================================================================================
+8. LINE-BY-LINE: SHARED FRONTEND HELPERS
+================================================================================
+
+---------------------------------------------------------------
+8.1  public/js/ui.js  ->  window.UI   (painting helpers, no state)
+---------------------------------------------------------------
+  window.UI = { ... };   "my name is window.UI, here's what I know."
+
+  showToast(message, type):
+      Finds/creates #toast-container, creates a toast div, colors it by type
+      (success/error/info), adds it, then after 4 seconds fades it out and
+      removes it. A temporary notification to the user.
+
+  debounce(fn, delay=300):
+      Returns a NEW function. When called, it cancels the previous timer and
+      sets a new one for `delay` ms. Effect: if the user types quickly, the
+      function only runs once AFTER they pause. Used for search inputs so we
+      don't hit the server on every keystroke.
+
+  sanitize(str):
+      The SECURITY function. It replaces <, >, &, ", ' with safe versions.
+      ALWAYS run external API text through this before putting it into
+      innerHTML, otherwise a malicious anime description could run code on the
+      user's browser (called XSS).
+
+  formatScore(score): returns "⭐ 8.90" or "N/A".
+  formatEpisodes(eps): returns "28 eps" or "? eps".
+
+  createAnimeCard(anime):
+      THE function that makes EVERY anime card in the whole app. It creates a
+      <div> element, makes it clickable (navigates to #/anime/<id>), and fills
+      it with the poster, score, title, type, episode count, and genres — all
+      passed through sanitize(). Because all pages use this ONE function, the
+      cards always look identical.
+
+  createSkeletonCards(count):
+      Makes `count` grey placeholder cards. While a page is loading real data,
+      it shows these "loading skeletons" so the page doesn't jump around.
+
+  getPageList(current, total, maxVisible):
+      Given the current page and total pages, returns an array of page numbers
+      to show, collapsing long lists with "...". e.g. [1, '...', 5, 6, 7, '...', 50].
+
+  createPagination({...}):
+      Builds a full pagination bar: previous button, page-number buttons, next
+      button. Clicking a number calls onPageChange(page).
+
+  timeAgo(date): returns "3 hours ago", "2 days ago", etc. Used on history pages.
+
+---------------------------------------------------------------
+8.2  public/js/user-store.js  ->  window.UserStore  (saved data)
+---------------------------------------------------------------
+Stores the user's favorites, watch-later, and histories in the browser's
+localStorage (which survives restarts). All keys start with "moodsync_".
+
+  KEYS: an object of the 4 storage key names.
+  _read(key): reads a key from localStorage, parses the JSON, and returns an
+      array. If it fails (corrupt data), returns [] so nothing ever crashes.
+  _write(key, value): saves an array back as JSON. try/catch so a full disk
+      ("quota exceeded") doesn't crash the app.
+  _migrate(list): an upgrade helper — older saved items had a "malId" field;
+      this converts them to the new "animeId" field so old users' data still
+      works. (Forward compatibility.)
+
+  Collections (favorites + watch-later use the SAME helper functions):
+    _getCollection / _inCollection / _addToCollection / _removeFromCollection /
+    _toggleInCollection — one generic engine, reused for both lists.
+    Then public wrappers: getFavorites, isFavorite, addFavorite,
+    removeFavorite, toggleFavorite, and getWatchLater, inWatchLater,
+    addWatchLater, removeWatchLater, toggleWatchLater.
+    "toggle" = flip on/off: if it's saved, remove it; if not, add it. Returns
+    true if it was ADDED.
+
+  Logs (mood history + watch history share _pushLog):
+    _pushLog(key, item, cap, replaceFilter): prepends new item, optionally
+        removes old matching items (replaceFilter), keeps only the newest
+        `cap` items.
+    addMoodHistory(entry): if the entry was a FACE SCAN, it REMOVES all older
+        face-scan entries first (only the newest scan is kept); manual picks
+        are never removed. Cap 100.
+    addWatchHistory(entry): appends watched anime with feedback; cap 200.
+
+---------------------------------------------------------------
+8.3  public/js/anime-api.js  ->  window.AnimeAPI  (browser's doorway)
+---------------------------------------------------------------
+This is the ONLY file in the browser that talks to the server. All other
+pages call functions here.
+
+  baseUrl: '/api/anime' — the server address prefix.
+  TTL: 300000 — 5 minutes; how long we cache answers.
+  _memCache: a Map — an in-memory cache (fast, no parsing needed).
+  sessionStorage: another cache that survives refreshes but not closed tabs.
+
+  _readCache(url) / _writeCache(url, data):
+      A two-layer cache (memory first, then sessionStorage). If the cached
+      answer is newer than 5 minutes, return it WITHOUT hitting the server.
+      Stream sources NEVER use this (see getSources).
+
+  _fetch(endpoint): the core network helper.
+      - Builds the full URL, checks cache first.
+      - fetch()s the server, checks the response is ok, parses JSON.
+      - Writes the result to cache and returns it.
+      - On any error, shows an error toast and re-throws.
+
+  The public methods (each just calls _fetch with the right endpoint):
+      searchByMood(mood, page): gets the genre string for that mood from
+          MoodMapping and searches.  Example: /search?genres=Comedy,Slice%20of%20Life&page=1&limit=24
+      getCurated(mood): searches for the 3 hand-picked titles from
+          MoodMapping.CURATED_ANIME, one at a time, then removes duplicates.
+      getDetail(id): /<id> -> returns one anime object.
+      getEpisodes(id): /episodes/<id> -> returns the episode list.
+      getSources(episodeId): /sources/<id>. NOTE: it does NOT use the cache,
+          because stream URLs expire quickly.
+      getTrending(), getSeasonal(): rails of anime.
+      search(query, genres, page): text + genre search for the Discover page.
+      getGenres(): the fixed genre list.
+
+---------------------------------------------------------------
+8.4  public/js/mood-mapping.js  ->  window.MoodMapping  (pure data + logic)
+---------------------------------------------------------------
+No network, no camera — just DATA and the rules that turn emotions into moods.
+
+  MOOD_CONFIG:
+      An object of the 6 app moods. Each has:
+        emoji, label (English name), a color (hex), genres (a COMMA-SEPARATED
+        STRING the API accepts, e.g. "Comedy,Slice of Life"), and genreNames
+        (a nicer DISPLAY version "Comedy, Slice of Life").
+      THESE mood->genre pairs drive the entire recommendation engine. To add
+      a mood or change genre matches, edit THIS object.
+
+  CURATED_ANIME:
+      For each mood, 3 hand-picked anime TITLES (strings). Used by the
+      "Handpicked for This Mood" row.
+
+  mapEmotionToMood(faceApiEmotion):
+      Takes the raw emotion name face-api gave (happy, sad, angry, surprised,
+      neutral, fearful, disgusted) and returns ONE of the 6 app moods:
+        - Direct 1:1 for happy/sad/angry/surprised/neutral.
+        - fearful -> surprised; disgusted -> naughty. (Unreliable emotions
+          mapped to a nearby mood.)
+
+  resolveWinningMood(scores):
+      Takes the full set of emotion scores. Maps every emotion to a mood,
+      adds up the total per mood, and returns the STRONGEST mood plus a
+      confidence 0-1 (the top mood's share of the total) plus all mood scores.
+      This is what the result card actually displays.
+
+  getGenresForMood / getMoodEmoji / getAllMoods:
+      Tiny helpers other files use constantly.
+
+================================================================================
+9. LINE-BY-LINE: THE MOOD DETECTION (camera) FILES
+================================================================================
+
+---------------------------------------------------------------
+9.1  public/js/mood-meter-core.js  ->  window.MoodMeter  (the engine)
+---------------------------------------------------------------
+The reusable "brain" that reads faces. It does NOT know about pages or UI —
+it just analyzes video frames and returns emotions.
+
+Setting constants at the top:
+  MODEL_URL: '/models/' — where the AI weight files live.
+  SCAN_SAMPLES: 12 — how many video frames we sample per scan.
+  SAMPLE_INTERVAL_MS: 130 — pause (ms) between each sample.
+  EMOTIONS: the 7 expressions face-api reports.
+  INPUT_SIZE / SCORE_THRESHOLD / MIN_HITS — detection tuning knobs.
+  modelsReady / _modelPromise — remember whether the AI loaded.
+
+  async loadModels():
+      Loads the 3 AI models (face detector, face landmarks, expression
+      classifier) from the /models/ folder. Uses a _modelPromise guard so it
+      never loads twice. Returns true on success.
+
+  assessFrameQuality(video):
+      Draws the current video frame to a hidden canvas and samples the center
+      region's brightness/contrast. Returns a 0-1 quality score. A totally
+      black or washed-out frame scores low, so we can avoid treating a dark
+      empty frame as a "neutral face".
+
+  async scan(video, overlayCanvas):
+      Reads each frame's 7 expressions directly from face-api's
+      FaceExpressionNet (`.withFaceExpressions()` step in scan below) — the pre-
+      trained net already aligns the face internally, so there is no manual crop
+      step anymore.
+
+  normalizeExpressions(expressions):
+      Adjusts the raw emotion numbers: makes them sum to 1. Returns clean
+      probabilities.
+
+  medianAverage(frameData):
+      For each of the 7 emotions, takes the MEDIAN value across all frames.
+      A median ignores one weird (too-dark/fast) frame better than an average
+      (mean) does. Re-normalizes so the results sum to 1.
+
+  refineExpressions(scores):
+      Corrects face-api's "neutral bias": the model keeps neutral high by
+      default and rarely fires sad/fearful/disgusted on their own. If one of
+      those three clearly stands out from happy/angry/surprised (past a noise
+      floor), it is promoted to the winner so it isn't swallowed by neutral.
+
+  drawOverlay(canvas, video, detection):
+      Draws purple dots on the face landmarks over the video, so the user can
+      see the scan working.
+
+  async scan(video, overlayCanvas):
+      THE main function. Loops SCAN_SAMPLES times, and each time:
+        - if the video has frames, detect the face + landmarks + expressions
+        - check that frame's quality
+        - normalize the expression vector and collect it
+        - draw the overlay dots
+        - wait SAMPLE_INTERVAL_MS
+      After the loop: if fewer than MIN_HITS good frames, throw 'NO_FACE'.
+      Otherwise keep the best 80% of frames (by quality), median-average them,
+      rank the emotions, and RETURN:
+        { top, confidence, scores, ranked, hits, totalSamples }
+      where top = the strongest raw emotion name.
+
+---------------------------------------------------------------
+9.2  public/js/mood-scanner.js  ->  window.MoodScanner  (the scan page)
+---------------------------------------------------------------
+The user-facing piece. Renders the "#/scan" page, opens the camera, runs the
+engine, and presents results. Also has a MANUAL fallback if no camera.
+
+  modelsLoaded / modelsFailed / stream: remember camera and model state.
+  MIN_CONFIDENCE: 0.50 — the lowest confidence we accept. Below this we ask
+      the user to retry, rather than give a confidently-wrong answer.
+
+  els(): a helper that grabs all the page's important DOM elements by id
+      (video, canvas, status, buttons...). Called after the page renders.
+
+  SUGGESTIONS: a cute one-liner for each mood shown under the result.
+
+  loadModels(): wraps MoodMeter.loadModels() and remembers the result.
+
+  acceptResult(mood, confidence, scores, ...):
+      If confidence < MIN_CONFIDENCE, show a toast with retry tips and return
+      false (don't accept). Otherwise call finishScan(). "Better honest than
+      wrong."
+
+  renderPage(): returns the HTML for the scan screen: the video element, a
+      canvas overlay, a face guide hint, the Start button, the result card
+      (hidden until done), and a grid of manual mood buttons.
+
+  mountPage(): wires up ALL the buttons (Start, Reload, Rescan, Accept, each
+      manual mood). Also pre-warms the AI models quietly so the first real
+      scan is near-instant.
+
+  startCamera(video, status, showToast):
+      Asks the browser for webcam access:
+        navigator.mediaDevices.getUserMedia({ video, audio:false })
+      Sets the video element's source to the stream and waits until the video
+      actually starts playing (with a 10-second timeout). Returns true if
+      camera started. If denied, shows an error and falls back to manual.
+
+  startFaceGuide(video) / stopFaceGuide:
+      While the camera is on but not scanning, does lightweight face detection
+      every 500ms and tells the user "move closer / move back / face detected".
+
+  runScan(): the actual scan flow.
+      - Disables the Start button.
+      - Calls MoodMeter.scan(video, canvas) to get raw emotions.
+      - Maps the top emotion to an app mood via MoodMapping.mapEmotionToMood.
+      - Logs the detailed result to the console (great for debugging).
+      - Calls acceptResult().
+      On error: if 'NO_FACE', show positioning tips; otherwise generic error.
+
+  startScan():
+      The "Start Scan" button handler. Loads models, starts the camera, hides
+      the button, then runs the scan.
+
+  finishScan(mood, confidence, rawScores):
+      Builds the fancy result card after a good scan:
+        - resolveWinningMood() to get the real winner + confidence.
+        - Saves to window.APP_STATE (currentMood + moodConfidence).
+        - Shows the winner emoji (pop animation), label, and a confidence
+          percentage pill.
+        - Shows secondary mood chips and a full mood-breakdown bar chart.
+        - Shows the suggestion text.
+        - Saves this scan to mood history via UserStore.
+
+  stopCamera() / stopScan():
+      CLEANUP. Turns off the camera tracks (so the red "camera on" light goes
+      off) and clears overlays. VERY important — without this, leaving the
+      page leaves your camera on.
+
+  selectMood(mood):
+      THE MANUAL FALLBACK (no camera needed). Sets APP_STATE mood with
+      confidence 1.0, records it, and goes straight to recommendations.
+
+  unmountPage(): calls stopScan(). app.js calls this whenever you leave the
+      scan page — this is how the camera gets turned off.
+
+================================================================================
+10. LINE-BY-LINE: THE PAGE FILES + CSS
+================================================================================
+
+---------------------------------------------------------------
+10.1  public/js/app.js  ->  window.App  (THE ROUTER AND BOOTSTRAP — the brain)
+---------------------------------------------------------------
+This file (a) boots the app and (b) decides which "screen" to show based on
+the web address's HASH (the part after # in the URL).
+
+  init(): the first function called when the app loads.
+      - Creates window.APP_STATE = { currentMood: null, moodConfidence: null }.
+      - Defines window.navigateTo = (hash) => { location.hash = hash; }.
+            This is how ANYWHERE in the app changes screens — it just sets the
+            browser's hash, which triggers the hashchange event below.
+      - setupTheme(): wires the dark/light toggle button.
+      - Listens for 'hashchange' (fires whenever the hash changes) and calls
+            handleRoute(). Also on DOMContentLoaded it sets up the nav menu and
+            calls handleRoute() to draw the first screen. It also preloads the
+            AI models in the background (after 2 seconds) so scans are faster.
+
+  setupTheme(): toggles data-theme on <html> and saves the choice to
+      localStorage so it persists.
+
+  setupNav() / closeMenu(): make the hamburger menu open/close on click, and
+      close it when you click a link or anywhere outside.
+
+  handleRoute(): THE ROUTER. Called on every hash change.
+      - Reads location.hash (e.g. '#/anime/123').
+      - IMPORTANT first: if there was a previous screen (this.currentModule)
+        and it has an unmountPage(), call it. This lets the old screen stop
+        its camera/timers cleanly before we move on.
+      - Parses the hash into a path and a param (e.g. path='anime', param='123').
+      - Looks up which module to use from a `routes` map:
+            ''  -> home (renderHome/mountHome)
+            'scan' -> window.MoodScanner
+            'recommendations' -> window.Recommendations
+            'anime' -> window.AnimeDetail
+            'player' -> window.Player
+            'search' -> window.Search
+            'profile' -> window.Profile
+        Unknown paths fall back to home (routes['']).
+      - Puts the module's HTML into <main id="app"> via innerHTML.
+      - Calls the module's mountPage(param) (or mount(param)) which loads its
+        real data and wires its buttons.
+      - Highlights the active nav link.
+
+  renderHome(): builds the ENTIRE home page HTML as one big template string:
+      hero section (with a "scanner mock" that shows either a real mood or a
+      demo), the mood palette buttons, a "picks" section, how-it-works steps,
+      a trending rail, and a privacy panel. It adapts the hero readout to a
+      real scan result if one exists (otherwise demo values).
+
+  mountHome(): after the home HTML is drawn, this:
+      - Animates the headline word-by-word.
+      - Sets up the mouse-following "spotlight" poster reveal.
+      - If there's a real scanned mood, updates the hero readout.
+      - Wires the mood tile buttons (click -> pickMood).
+      - Loads the "picks" grid and "trending" rail IN PARALLEL (both are
+        independent network requests), showing skeletons while loading.
+
+  pickMood(mood): sets APP_STATE to that mood and navigates to
+      #/recommendations. (Used by the quick-pick mood tiles on home.)
+
+  setupSpotlight(): a fancy mouse-following spotlight. For performance it
+      renders the soft radial gradient ONCE into a small offscreen canvas tile,
+      then only moves the mask position, instead of redrawing every frame.
+
+  unmountPage(): cleans up the spotlight listener when leaving home.
+
+LAST LINE:  window.App.init();  — starts the whole app.
+
+---------------------------------------------------------------
+10.2  public/js/recommendations.js  ->  window.Recommendations
+---------------------------------------------------------------
+Shows "Anime for when you're feeling X".
+
+  mountPage():
+      - Reads APP_STATE.currentMood. If there is NO mood, redirect to #/scan.
+      - Builds a mood-colored banner (uses the mood's color + emoji + label +
+        recommended genres).
+      - Shows the confidence bar if a confidence exists.
+      - Shows skeletons, loads the main grid, then ALSO loads the curated
+        ("handpicked") rail and trending rail.
+  goToPage(page):
+      - The paginated main grid. Calls AnimeAPI.searchByMood(mood, page),
+        draws cards, and builds pagination (capped at 50 pages).
+      - Guards against double-loading with this.isLoading.
+  loadCurated / loadTrending: fill the two side rails.
+  unmountPage(): resets page counters.
+
+---------------------------------------------------------------
+10.3  public/js/anime-detail.js  ->  window.AnimeDetail
+---------------------------------------------------------------
+Shows one anime's full detail page (#/anime/:id).
+
+  renderPage(id): returns a skeleton (loading) placeholder.
+  mountPage(id):
+      - Calls AnimeAPI.getDetail(id).
+      - Builds the full page: banner image, poster, score badge, title,
+        tagline (type · season year · studio), genre pills, status pill,
+        synopsis, trailer link, and info tiles.
+      - ALL external text goes through UI.sanitize() before innerHTML.
+      - Also builds "Watch Now on Miruro" links. Miruro is an external site
+        that uses AniList ids. miruroWatchUrl(title, id) builds
+        https://www.miruro.tv/watch/<id>/<title-slug>.
+  setupActions(anime): wires the Favorite ❤️ and Watch-Later 🔖 buttons to
+      UserStore.toggleFavorite / toggleWatchLater and shows toasts.
+
+---------------------------------------------------------------
+10.4  public/js/player.js  ->  window.Player   (the streaming player)
+---------------------------------------------------------------
+The built-in video player (#/player/:id).
+
+  mountPage(id):
+      - Loads detail AND episodes IN PARALLEL with Promise.allSettled (so if
+        one fails, the other still works).
+      - Fills title, synopsis (truncated to 300 chars), the Miruro link.
+      - If there are episodes -> list them and auto-play the first.
+      - Else if there's a trailer -> embed it.
+      - Else show a "no stream available" message.
+  playEpisode(ep):
+      - Calls AnimeAPI.getSources(ep.id) to get stream URLs + qualities.
+      - Picks the 'auto' or first HLS source as primary.
+      - Builds quality buttons sorted by resolution, then attachSource(primary).
+  attachSource(source):
+      - If it's an HLS (.m3u8) stream, play it with hls.js (or Safari's native
+        HLS). Hides the loading overlay once the manifest parses; shows an
+        error on a fatal error.
+      - Otherwise just set video.src directly.
+  qualityRank: sorts quality labels (1080 > 720 > AUDIO).
+  setupFeedback: the Yes/No buttons -> UserStore.addWatchHistory() with
+      the current mood + feedback. (Currently just stored.)
+  destroyEngine() / unmountPage():
+      Destroys the HLS engine and clears the wrapper when you leave, so no
+      stream keeps downloading in the background.
+
+---------------------------------------------------------------
+10.5  public/js/search.js  ->  window.Search   (the Discover page)
+---------------------------------------------------------------
+Text search + mood(genre) filter.
+
+  mountPage():
+      - Loads trending + seasonal rails by default.
+      - The search input is DEBOUNCED (500ms) — it only searches after you
+        pause typing.
+      - The mood dropdown converts a selected mood into its genres and searches.
+  doSearch(page):
+      - If there's neither a query nor genres, show the default rails.
+      - Otherwise hide defaults and call AnimeAPI.search(query, genres, page),
+        drawing cards + pagination.
+  unmountPage(): resets the search state.
+
+---------------------------------------------------------------
+10.6  public/js/profile.js  ->  window.Profile   (all local data)
+---------------------------------------------------------------
+Three tabs: Mood History, Favorites, Watch Later. Everything comes from
+localStorage via UserStore (no server needed).
+
+  mountPage(): wires the tab buttons; renders stats + all three lists.
+  renderStats(): shows summary cards: number of mood scans, top mood,
+      favorites count, watch-later count.
+  renderMoodHistory(page): paged list of past scans/picks (emoji + % + method +
+      time ago).
+  renderList(collection, ...): draws a paged grid of saved anime cards for
+      favorites or watch-later. Each card has a Remove button (stops the click
+      so it doesn't navigate). Clicking the card navigates to its detail page.
+
+---------------------------------------------------------------
+10.7  public/css/*  — the styling (the "paint job")
+---------------------------------------------------------------
+  variables.css       THE DESIGN SYSTEM. Defines CSS custom properties
+                      (--color, --spacing, --radius, fonts, motion) plus the
+                      full dark theme. Change the whole look of the app here.
+  global.css          Reset + base element styles + layout helpers + footer.
+  components.css      Reusable pieces: buttons, nav, cards, toasts, skeletons,
+                      pagination.
+  home.css            The home page hero, spotlight, mood palette, steps.
+  scanner.css         The scanner page camera frame, scan line, face guide,
+                      result card, breakdown bars.
+  recommendations.css The recommendations banner + confidence bar.
+  player.css          The video player + episode list + quality buttons.
+  detail.css          The anime detail page layout.
+  profile.css         The profile header, stat cards, tabs, history.
+  responsive.css      A few media queries for small phones.
+
+  RULE: JS uses element ids and class names to find elements. If you rename an
+  id in a JS page, you must update the matching CSS (and vice versa).
+
+================================================================================
+11. BUILD ORDER — REBUILD IT FROM NOTHING, STEP BY STEP
+================================================================================
+Do these steps IN ORDER. Each later file can rely on earlier ones because of
+the window.X pattern and the script order.
+
+STEP 0 — Set up the folder + install:
+  1. Create a folder. Open a terminal there.
+  2. Create package.json (or run "npm init -y" and edit it). Add the scripts
+     and dependencies shown in section 6.1 / package.json.
+  3. Run "npm install"
+     (downloads express, cors, compression, dotenv, nodemon into node_modules).
+  4. Create .env and .env.example with the settings from section 6.1.
+
+STEP 1 — The BACKEND (server folder), in this order:
+  5. server/services/anilist-api.js   (talks to AniList — section 6.3)
+  6. server/services/miruro-api.js    (talks to Miruro — section 6.4)
+  7. server/routes/anime.js           (the failover + endpoints — section 6.2)
+  8. server/routes/mood.js            (DeepFace proxy — section 6.5)
+  9. server/services/deepface-client.js (DeepFace client — section 6.5)
+  10. server/server.js                (ties it all together — section 6.1)
+
+STEP 1b — DEEPFACE SIDECAR (optional Python program):
+  10b. server/deepface/deepface_service.py + requirements.txt (section 6.5).
+      Run separately: pip install -r requirements.txt ; python deepface_service.py
+
+STEP 2 — The FRONTEND shell:
+  11. public/index.html               (the one page — section 7.1)
+
+STEP 3 — Shared helpers (load order matters — load EARLY first):
+  12. public/js/ui.js                 (window.UI — section 8.1)
+  13. public/js/user-store.js         (window.UserStore — section 8.2)
+  14. public/js/mood-mapping.js       (window.MoodMapping — section 8.4)
+  15. public/js/anime-api.js          (window.AnimeAPI — section 8.3)
+
+STEP 4 — The mood/camera files:
+  16. public/js/mood-meter-core.js    (window.MoodMeter — section 9.1)
+  17. public/js/mood-fuser.js         (window.MoodFuser — section 6.5)
+  18. public/js/mood-scanner.js       (window.MoodScanner — section 9.2)
+
+STEP 5 — The page files (routed by app.js):
+  19. public/js/recommendations.js    (section 10.2)
+  20. public/js/anime-detail.js       (section 10.3)
+  21. public/js/player.js             (section 10.4)
+  22. public/js/search.js             (section 10.5)
+  23. public/js/profile.js            (section 10.6)
+  24. public/js/app.js                (the router + bootstrap — LAST — section 10.1)
+
+STEP 6 — Assets:
+  25. Add the AI model files to public/models/ (from the face-api.js models
+      repo: tiny_face_detector, face_landmark_68_tiny, face_expression).
+  26. Add face-api.min.js to public/vendor/ (from the library).
+  27. Add your logo to public/assets/ and the font if you want it.
+
+STEP 7 — CSS + test:
+  28. Write the CSS files (public/css/). Start with variables.css, then
+      global, components, then each page, then responsive.
+  29. Run "npm start" and open http://localhost:3069.
+
+ORDER CHECKLIST (index.html script order, MUST be exactly this):
+  ui, user-store, mood-mapping, mood-meter-core, mood-fuser, mood-scanner,
+  anime-api, recommendations, anime-detail, player, search, profile, app
+
+================================================================================
+12. HOW TO TEST AND RUN
+================================================================================
+  - First time:       npm install
+  - Start normally:   npm start         (run server/server.js)
+  - Development:      npm run dev       (nodemon auto-restarts on edits)
+  - Open:             http://localhost:3069
+  - Change the port by editing PORT in .env, then RESTART the server.
+  - Health check:     http://localhost:3069/api/health  -> { status: 'ok' }
+  - Test an API:      http://localhost:3069/api/anime/trending
+  - The server console shows warnings like "[anime] AniList failed..." which
+    tell you which external provider was down.
+
+================================================================================
+13. COMMON PROBLEMS AND THEIR FIXES
+================================================================================
+"Lists are empty / could not load"
+  - Open the browser DevTools -> Network tab. Is /api/anime/* returning an
+    error (5xx)? Then the external provider is down or blocked.
+  - Check the server console to see which provider failed.
+  - The server caches 5 minutes — a stale-but-valid answer can hide a provider
+    going down. Restart the server to clear the in-memory cache.
+
+"The player says stream unavailable"
+  - Streaming was provided by the HiAnime/Consumet provider, which was removed
+    (see section 6.4), so there is currently NO in-app streaming source. The
+    detail page still offers "Watch Now on Miruro" external links instead.
+  - If you re-add a streaming provider later, its sources should be cached only
+    ~2 minutes server-side since stream URLs expire.
+
+"The scan gives the wrong mood / 'confidence too low'"
+  - LIGHTING is the #1 factor. Face forward, plenty of light.
+  - MIN_CONFIDENCE in mood-scanner.js (0.50) is a knob you can tune.
+  - Emotion -> mood rules live in mood-mapping.js, NOT in the engine.
+  - For better sad/fearful/disgusted accuracy, turn on the DeepFace sidecar
+    (DEEPFACE_ENABLED=true) — the fuser uses it to confirm negative emotions.
+
+"My CSS/JS change does nothing"
+  - Hard refresh (Ctrl+Shift+R). Static files are served with no-cache headers,
+    but browser caching can still hide changes.
+  - If window.X is "undefined", the index.html script order is wrong.
+
+"Wrong anime / duplicated cards"
+  - AniList (and Miruro) ids are numbers; every provider keeps ids in its own
+    namespace. Never use one provider's id on another.
+  - The curated loader de-dupes by id; the client cache is keyed by URL so
+    different query params = separate cached entries.
+
+================================================================================
+14. GLOSSARY (quick recap of every word used)
+================================================================================
+  window          The browser's global object; files attach window.X = module.
+  require()       Node command to load another JS module.
+  module.exports  Node command to expose functions for other files to use.
+  async/await     Marks a function that does slow work (network); await pauses
+                  until it's done.
+  fetch()         The command to make an HTTP request.
+  try/catch/finally  Run something; if it throws an error, catch it; finally
+                  runs no matter what.
+  throw           Raise an error on purpose.
+  const/let/var   Declare a variable (const = can't be reassigned).
+  arrow function  A shorter way to write functions: (x) => x * 2.
+  template literal Backtick string that can embed variables: `Hi ${name}`.
+  Map             A key->value storage (like an object, but better for caches).
+  JSON            Text format for data: { "key": "value" }.
+  object          A collection of key/value pairs in {}.
+  array           A list in [].
+  HTML element    One part of a page: <div>, <button>, <video>.
+  DOM             The browser's tree of HTML elements that JS can change.
+  innerHTML       Setting this replaces the HTML content of an element.
+  event listener  A function the browser calls when something happens (click).
+  debounce        Delay a function until the user pauses.
+  localStorage    Browser storage that survives restarts.
+  sessionStorage  Browser storage that survives refresh but not closed tabs.
+  middleware      A function each request passes through (in Express).
+  route           A rule: "when this URL is requested, do this".
+  proxy           A server that fetches from another site on your behalf.
+  normalize       Convert various messy formats into one standard shape.
+  cache           Store a previous answer so you don't re-fetch.
+  TTL             "Time-to-live" — how long a cached item stays valid.
+  SPA / router    One HTML page; JS swaps screens based on the URL hash.
+  failover        If the primary source fails, use the backup.
+  hash routing    Using # in the URL (#/anime/123) to pick the screen.
+  XSS             A security attack via untrusted text; sanitize() prevents it.
+  CORS            A browser rule; the cors middleware relaxes it for our server.
+  HLS / m3u8      Video streaming format; hls.js plays it.
+  <video> tag     The HTML element that shows video.
+
+================================================================================
+ DONE. Build order in section 11 + each section's line-by-line is everything
+ you need to recreate the app from nothing. If a screen breaks: check the
+ console (F12), follow the request in the Network tab, and keep every file
+ consistent with the window.X + normalize contract patterns above.
+================================================================================

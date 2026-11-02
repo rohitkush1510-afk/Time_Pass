@@ -1,0 +1,482 @@
+/* ==========================================================================
+   MoodSync — Components (Light Canvas · Ink & Cream · Sky Blue)
+   White panels · soft shadows · pill CTAs · tactile lift
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Buttons — clean pills (hover lift, tactile press)
+   -------------------------------------------------------------------------- */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 12px 28px;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s var(--ease-luxe);
+}
+
+/* Light sheen / sweep */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(117, 197, 222, 0.18),
+    transparent
+  );
+  transition: all 0.6s;
+  z-index: 1;
+}
+.btn > * { position: relative; z-index: 2; }
+
+.btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-deep);
+  box-shadow: var(--shadow-glow-strong);
+  transform: translateY(-3px);
+}
+.btn:hover::before {
+  left: 100%;
+  transition: all 0.7s ease-in-out;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: var(--accent-deep);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary — solid ink CTA */
+.btn-primary {
+  background: var(--surface-dark);
+  border-color: var(--surface-dark);
+  color: var(--cream);
+}
+.btn-primary:hover {
+  color: #ffffff;
+  background: #000000;
+  border-color: #000000;
+  box-shadow: var(--shadow-glow-strong);
+}
+
+/* Secondary — pure white pill */
+.btn-secondary {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+/* Sizes */
+.btn-sm {
+  padding: 8px 18px;
+  font-size: 0.72rem;
+}
+
+/* Back Button */
+.btn-back {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 10px 22px;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+  transition: all 0.35s var(--ease-luxe);
+  margin-bottom: var(--space-md);
+}
+.btn-back::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(117, 197, 222, 0.16), transparent);
+  transition: all 0.6s;
+}
+.btn-back:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-deep);
+  box-shadow: 0 0 0 4px rgba(117, 197, 222, 0.18);
+  transform: translateY(-2px);
+}
+.btn-back:hover::before { left: 100%; transition: all 0.7s ease-in-out; }
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+section h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: var(--space-lg);
+}
+section h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+}
+
+/* --------------------------------------------------------------------------
+   Anime Cards — glass panels that ignite on hover
+   -------------------------------------------------------------------------- */
+.anime-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  height: 100%;
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s var(--ease-luxe);
+}
+.anime-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(117, 197, 222, 0.12), transparent);
+  transition: all 0.6s;
+  z-index: 1;
+  pointer-events: none;
+}
+.anime-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow), var(--shadow-modal);
+}
+.anime-card:hover::before {
+  left: 100%;
+  transition: all 0.8s ease-in-out;
+}
+
+/* Anime Grids (rendered by JS) */
+.anime-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-lg);
+}
+
+.anime-grid.horizontal-scroll {
+  display: flex;
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+  scroll-snap-type: x proximity;
+}
+.anime-grid.horizontal-scroll > * {
+  flex: 0 0 180px;
+  scroll-snap-align: start;
+}
+.anime-grid.horizontal-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+/* Anime Card (JS-rendered variant) */
+.anime-card-img {
+  aspect-ratio: 3/4;
+  width: 100%;
+  background-color: var(--bg-tertiary);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.anime-score {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  background: var(--cream);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(17, 17, 17, 0.25);
+}
+
+.anime-card-body {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex-grow: 1;
+}
+
+.anime-card-body h4 {
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.5em;
+}
+
+.anime-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.anime-genres {
+  color: var(--accent-deep);
+  font-size: 0.75rem;
+  margin-top: auto;
+  opacity: 1;
+}
+
+/* Tags & Badges */
+.genre-tag {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   Toasts — paper slips
+   -------------------------------------------------------------------------- */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  z-index: var(--z-toast);
+}
+
+.toast {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--text-muted);
+  box-shadow: var(--shadow-modal);
+  min-width: 250px;
+  animation: slideIn var(--transition-normal) forwards;
+  transition: opacity 300ms ease;
+}
+.toast.fade-out { animation: none; opacity: 0; }
+.toast.success { border-left-color: var(--mood-relaxed); }
+.toast.error { border-left-color: var(--mood-angry); }
+.toast.info { border-left-color: var(--gold); }
+
+@keyframes slideIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   Loaders & Skeletons
+   -------------------------------------------------------------------------- */
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--bg-tertiary);
+  border-top-color: var(--accent-deep);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  border-radius: 0;
+}
+.skeleton-text {
+  height: 14px;
+  margin: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+}
+.skeleton-text.short { width: 60%; }
+.skeleton-body {
+  padding: var(--space-sm) 0;
+}
+
+/* --------------------------------------------------------------------------
+   Pagination — round paper coins
+   -------------------------------------------------------------------------- */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  margin: var(--space-xl) 0;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  position: relative;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s var(--ease-luxe);
+}
+.page-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(117, 197, 222, 0.2), transparent);
+  transition: all 0.6s;
+}
+.page-btn:hover:not(:disabled) {
+  color: var(--accent-deep);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px rgba(117, 197, 222, 0.18);
+  transform: translateY(-2px);
+}
+.page-btn:hover:not(:disabled)::before { left: 100%; transition: all 0.7s ease-in-out; }
+.page-btn.active {
+  background: var(--accent-gradient);
+  border-color: var(--accent-deep);
+  color: var(--on-accent);
+}
+.page-btn.active::before { display: none; }
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: var(--text-muted);
+  padding: 0 var(--space-xs);
+  user-select: none;
+}
+
+/* Search / Discover Page */
+.search-page {
+  padding-top: var(--space-xl);
+}
+
+.search-bar-container {
+  max-width: 640px;
+  margin: 0 auto var(--space-lg);
+}
+
+.search-bar-container input {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--line-gold);
+  border-radius: var(--radius-full);
+  padding: var(--space-md) var(--space-xl);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s var(--ease-luxe);
+}
+.search-bar-container input::placeholder { color: var(--text-muted); }
+.search-bar-container input:focus {
+  border-color: var(--accent-deep);
+  box-shadow: 0 0 0 4px rgba(117, 197, 222, 0.25);
+}
+
+.filter-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.filter-row select,
+.search-bar-container select {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  color: var(--text-primary);
+  padding: var(--space-sm) var(--space-md);
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s var(--ease-luxe);
+}
+.filter-row select:hover,
+.search-bar-container select:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px rgba(117, 197, 222, 0.15);
+}
+
+/* Detail page extras — styles live in css/detail.css */
