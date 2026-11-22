@@ -1,0 +1,142 @@
+/* ==========================================================================
+   YORUKA — anime-style faux Japanese display font for headings & brand marks
+   Ships only weight 400; declaring it as covering all weights stops the
+   browser from synthesizing faux bold (which smears the chunky letterforms).
+   ========================================================================== */
+@font-face {
+  font-family: 'Yoruka';
+  src: url('/assets/fonts/yoruka.otf') format('opentype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ==========================================================================
+     CREATIVE STUDIO — LIGHT CANVAS · INK & CREAM · SKY BLUE
+     Soft grey canvas (#E4E4E4) · white panels · ink type (#111) · cream on dark
+     Signature motion: splash reveal, word blur-in, pill CTAs with arrow circle
+     ========================================================================== */
+
+  /* Canvas layers */
+  --bg-primary: #e4e4e4;
+  --bg-secondary: #ebebe9;
+  --bg-tertiary: #dcdcd9;
+  --card-bg: #ffffff;
+  --border-color: rgba(17, 17, 17, 0.1);
+
+  /* Sky blue accent */
+  --accent-primary: #75c5de;
+  --accent-secondary: #a8dcf0;
+  --accent-deep: #2e7d99;
+  --accent-gradient: linear-gradient(135deg, #75c5de, #4faecb);
+  --sky: #75c5de;
+
+  /* Dark surface + cream ink */
+  --surface-dark: #111111;
+  --cream: #f4f1e8;
+  --cream-muted: #9a9590;
+
+  /* Legacy alias name kept so existing styles re-theme cleanly */
+  --gold: #75c5de;
+
+  /* Glassmorphism */
+  --glass: rgba(255, 255, 255, 0.6);
+  --glass-strong: rgba(255, 255, 255, 0.88);
+  --line-glass: rgba(17, 17, 17, 0.08);
+  --line-gold: rgba(17, 17, 17, 0.12);
+
+  /* Ink */
+  --text-primary: #111111;
+  --text-secondary: #55524c;
+  --text-muted: #8f8a80;
+  --on-accent: #0e2a33;
+
+  /* Mood Colors (tuned to sit well on the light canvas) */
+  --mood-happy: #d99b13;
+  --mood-sad: #4a86c9;
+  --mood-angry: #d0432f;
+  --mood-surprised: #d97323;
+  --mood-neutral: #837c66;
+  --mood-relaxed: #27996a;
+  --mood-naughty: #bc3f60;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Border Radius — generous studio rounding */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Shadows — soft paper depth */
+  --shadow-card: 0 6px 20px rgba(17, 17, 17, 0.08), 0 1px 3px rgba(17, 17, 17, 0.06);
+  --shadow-glow: 0 0 0 4px rgba(117, 197, 222, 0.25);
+  --shadow-glow-strong: 0 0 0 4px rgba(117, 197, 222, 0.3), 0 14px 34px rgba(17, 17, 17, 0.12);
+  --shadow-modal: 0 30px 70px rgba(17, 17, 17, 0.25), 0 0 0 1px rgba(17, 17, 17, 0.05);
+
+  /* Typography — Yoruka for display, Inter for body */
+  --font-display: 'Yoruka', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-main: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Motion */
+  --ease-luxe: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+
+  /* Z-Index */
+  --z-nav: 100;
+  --z-toast: 400;
+  --z-splash: 500;
+}
+
+/* ==========================================================================
+   DARK MODE — same studio language, night canvas · sky accent stays
+   Toggled via <html data-theme="dark"> (see app.js setupTheme)
+   ========================================================================== */
+[data-theme="dark"] {
+  /* Canvas layers */
+  --bg-primary: #0f1114;
+  --bg-secondary: #16191d;
+  --bg-tertiary: #1d2126;
+  --card-bg: #191d22;
+  --border-color: rgba(255, 255, 255, 0.11);
+
+  /* Sky blue accent — unchanged, it sings on dark */
+  --accent-primary: #75c5de;
+  --accent-secondary: #a8dcf0;
+  --accent-deep: #7fd4ec;
+  --accent-gradient: linear-gradient(135deg, #5db8d3, #429ebc);
+  --sky: #75c5de;
+
+  /* Dark surface + cream ink */
+  --surface-dark: #15181c;
+  --cream: #f0ede4;
+  --cream-muted: #9a9590;
+
+  /* Glass */
+  --glass: rgba(22, 26, 31, 0.6);
+  --glass-strong: rgba(22, 26, 31, 0.88);
+  --line-glass: rgba(255, 255, 255, 0.09);
+  --line-gold: rgba(255, 255, 255, 0.12);
+
+  /* Ink */
+  --text-primary: #f0eee8;
+  --text-secondary: #b7b3aa;
+  --text-muted: #807b72;
+  --on-accent: #0e2a33;
+
+  /* Shadows — deeper for the night canvas */
+  --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 4px rgba(117, 197, 222, 0.22);
+  --shadow-glow-strong: 0 0 0 4px rgba(117, 197, 222, 0.28), 0 14px 34px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 30px 70px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}

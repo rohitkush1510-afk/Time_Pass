@@ -1,0 +1,774 @@
+.scanner-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.hero-section {
+  max-width: 560px;
+}
+.hero-section h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.6vw, 2.2rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  margin-bottom: var(--space-sm);
+}
+.hero-section p {
+  color: var(--text-secondary);
+}
+
+/* Start Scan — ink CTA pill */
+#btn-start-scan {
+  background: var(--surface-dark);
+  color: var(--cream);
+  border: none;
+  padding: 16px 52px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s var(--ease-luxe);
+}
+#btn-start-scan::before {
+  display: none;
+}
+#btn-start-scan:hover {
+  background: #000000;
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-glow-strong);
+}
+#btn-start-scan:active {
+  transform: scale(0.98);
+}
+#btn-start-scan:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.scanner-container {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background-color: #101010;
+  margin: var(--space-xl) 0;
+  box-shadow: var(--shadow-modal);
+}
+[data-theme="dark"] .scanner-container {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* Mirror effect */
+}
+
+.scanner-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1); /* Mirror to match the flipped video */
+}
+
+.scanner-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 70%;
+  border: 2px dashed rgba(244, 241, 232, 0.55);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.scanner-frame.scanning {
+  border-color: var(--accent-primary);
+  animation: pulseFrame 1s infinite alternate;
+}
+
+/* Face guide overlay — shown during camera preview before scan */
+.face-guide {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+.face-guide:empty {
+  display: none;
+}
+.face-guide.good {
+  background: rgba(34, 197, 94, 0.18);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.face-guide.warning {
+  background: rgba(234, 179, 8, 0.18);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.face-guide.searching {
+  background: rgba(117, 197, 222, 0.18);
+  color: var(--accent-primary);
+  border: 1px solid rgba(117, 197, 222, 0.3);
+}
+
+@keyframes pulseFrame {
+  from { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  to { transform: translate(-50%, -50%) scale(1.05); opacity: 1; box-shadow: 0 0 30px rgba(117, 197, 222, 0.5); }
+}
+
+.scanner-status {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  min-height: 2rem;
+  margin-bottom: var(--space-md);
+}
+
+/* Reload / rescan icon floating on the camera frame */
+.btn-scan-reload {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s var(--ease-luxe);
+}
+.btn-scan-reload:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-deep);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+.btn-scan-reload:hover .btn-scan-reload-icon {
+  transform: rotate(180deg);
+}
+.btn-scan-reload:active {
+  transform: translateY(0) scale(0.95);
+}
+.btn-scan-reload-icon {
+  display: inline-block;
+  transition: transform 0.6s var(--ease-luxe);
+}
+
+/* ==========================================================================
+   SCAN RESULT CARD — premium reveal
+   ========================================================================== */
+.scan-result {
+  margin-top: var(--space-xl);
+  max-width: 520px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.result-card {
+  --mood-color: var(--accent-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  box-shadow: var(--shadow-modal);
+  animation: resultReveal 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.6s ease, box-shadow 0.6s ease;
+}
+.result-card.mood-revealed {
+  border-color: color-mix(in srgb, var(--mood-color) 25%, var(--border-color));
+  box-shadow:
+    var(--shadow-modal),
+    0 0 40px color-mix(in srgb, var(--mood-color) 12%, transparent);
+}
+
+/* Mood-colored gradient header zone */
+.result-card-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(28px, 5vw, 44px) clamp(24px, 4vw, 40px) var(--space-lg);
+  gap: var(--space-sm);
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -5%, color-mix(in srgb, var(--mood-color) 18%, transparent), transparent),
+    radial-gradient(ellipse 50% 40% at 20% 10%, color-mix(in srgb, var(--mood-color) 6%, transparent), transparent),
+    radial-gradient(ellipse 50% 40% at 80% 10%, color-mix(in srgb, var(--mood-color) 6%, transparent), transparent),
+    linear-gradient(180deg, color-mix(in srgb, var(--mood-color) 8%, var(--card-bg)) 0%, var(--card-bg) 100%);
+  overflow: hidden;
+}
+.result-card-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 5%, var(--mood-color), transparent 95%);
+  opacity: 0.9;
+}
+.result-card-header::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--mood-color) 10%, transparent), transparent 70%);
+  pointer-events: none;
+  animation: headerGlow 3s ease-in-out infinite alternate;
+}
+@keyframes headerGlow {
+  0% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+}
+
+/* "Scan Complete" badge at top */
+.result-badge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--mood-color);
+  background: color-mix(in srgb, var(--mood-color) 8%, transparent);
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--mood-color) 18%, transparent);
+  margin-bottom: var(--space-sm);
+  z-index: 1;
+}
+.result-badge-label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mood-color);
+  animation: badgeDot 2s ease-in-out infinite;
+}
+@keyframes badgeDot {
+  0%, 100% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Winner display — prominent mood as final output */
+.winner-display {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: var(--space-md) 0 var(--space-sm);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.mood-revealed .winner-display {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.winner-emoji {
+  font-size: 5.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.25));
+}
+.winner-emoji.pop {
+  animation: emojiPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes emojiPop {
+  0% { transform: scale(0) rotate(-25deg); opacity: 0; }
+  30% { transform: scale(1.4) rotate(10deg); opacity: 1; }
+  50% { transform: scale(0.85) rotate(-5deg); }
+  70% { transform: scale(1.1) rotate(2deg); }
+  85% { transform: scale(0.97) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.winner-mood-label {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  color: var(--mood-color);
+  line-height: 1.1;
+  margin: 0;
+  text-shadow: 0 2px 28px color-mix(in srgb, var(--mood-color) 30%, transparent);
+  letter-spacing: 0.01em;
+}
+
+.winner-percentage {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--mood-color);
+  padding: 10px 28px;
+  border-radius: var(--radius-full);
+  box-shadow:
+    0 6px 24px color-mix(in srgb, var(--mood-color) 45%, rgba(0, 0, 0, 0.3)),
+    0 0 0 3px color-mix(in srgb, var(--mood-color) 20%, transparent);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.winner-percentage.pct-pop {
+  animation: pctPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both;
+}
+@keyframes pctPop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Secondary moods — compact mini grid */
+.secondary-moods {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.5s ease 0.4s;
+}
+.mood-revealed .secondary-moods {
+  opacity: 1;
+}
+.secondary-mood-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--chip-color, var(--mood-color)) 10%, var(--bg-secondary));
+  color: var(--text-secondary);
+  border: 1px solid color-mix(in srgb, var(--chip-color, var(--mood-color)) 15%, var(--border-color));
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.secondary-mood-chip:hover {
+  transform: scale(1.05);
+  background: color-mix(in srgb, var(--chip-color, var(--mood-color)) 18%, var(--bg-secondary));
+}
+.secondary-mood-chip .chip-emoji {
+  font-size: 0.9rem;
+}
+.secondary-mood-chip .chip-pct {
+  font-weight: 800;
+  color: var(--chip-color, var(--mood-color));
+}
+
+/* ==========================================================================
+   Card body — below the header
+   ========================================================================== */
+
+/* Mood Breakdown Section */
+.mood-breakdown-section {
+  padding: 0 clamp(20px, 4vw, 40px);
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.5s ease 0.5s;
+}
+.mood-revealed .mood-breakdown-section {
+  opacity: 1;
+}
+.mood-breakdown-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-sm);
+}
+
+.mood-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--space-md);
+}
+
+.mood-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bar-color, var(--accent-primary)) 4%, var(--bg-secondary));
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+.mood-bar-row.mood-bar-top {
+  background: color-mix(in srgb, var(--bar-color) 12%, var(--bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--bar-color) 30%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--bar-color) 10%, transparent);
+}
+
+.mood-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.mood-bar-top .mood-bar-label {
+  color: var(--bar-color);
+}
+.mood-bar-emoji {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.mood-bar-track {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--bar-color) 10%, rgba(255,255,255,0.06));
+  overflow: hidden;
+}
+.mood-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--bar-color);
+  opacity: 0.35;
+  transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.mood-bar-top .mood-bar-fill {
+  opacity: 1;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--bar-color) 50%, transparent);
+}
+
+.mood-bar-pct {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-align: right;
+}
+.mood-bar-top .mood-bar-pct {
+  color: var(--bar-color);
+}
+
+/* Staggered bar reveal */
+.mood-bar-row {
+  opacity: 0;
+  transform: translateX(-8px);
+  animation: barReveal 0.4s ease forwards;
+}
+.mood-bar-row:nth-child(1) { animation-delay: 0.55s; }
+.mood-bar-row:nth-child(2) { animation-delay: 0.65s; }
+.mood-bar-row:nth-child(3) { animation-delay: 0.75s; }
+.mood-bar-row:nth-child(4) { animation-delay: 0.85s; }
+.mood-bar-row:nth-child(5) { animation-delay: 0.95s; }
+.mood-bar-row:nth-child(6) { animation-delay: 1.05s; }
+.mood-bar-row:nth-child(7) { animation-delay: 1.15s; }
+.mood-bar-row:nth-child(8) { animation-delay: 1.25s; }
+.mood-bar-row:nth-child(9) { animation-delay: 1.35s; }
+@keyframes barReveal {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Suggestion */
+.result-suggestion {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+  padding: var(--space-sm) clamp(20px, 4vw, 40px) 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Actions row */
+.scan-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-lg) clamp(24px, 4vw, 40px) clamp(24px, 4vw, 32px);
+  position: relative;
+  z-index: 1;
+}
+
+/* Accept CTA — mood-colored */
+.btn-accept {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 40px;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: var(--mood-color);
+  box-shadow:
+    0 6px 20px color-mix(in srgb, var(--mood-color) 40%, rgba(0, 0, 0, 0.2)),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.35s var(--ease-luxe);
+  overflow: hidden;
+  z-index: 1;
+}
+.btn-accept::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn-accept::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+.btn-accept:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 32px color-mix(in srgb, var(--mood-color) 50%, rgba(0, 0, 0, 0.25)),
+    0 0 0 3px color-mix(in srgb, var(--mood-color) 25%, transparent);
+}
+.btn-accept:hover::before { opacity: 1; }
+.btn-accept:hover::after { left: 120%; }
+.btn-accept:hover svg { transform: translateX(3px); }
+.btn-accept svg {
+  transition: transform 0.3s var(--ease-luxe);
+  flex-shrink: 0;
+}
+.btn-accept:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Rescan — ghost pill (scoped to scanner page to avoid conflict with recommendations.css) */
+.scan-actions .btn-rescan {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.35s var(--ease-luxe);
+  z-index: 1;
+}
+.scan-actions .btn-rescan:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.scan-actions .btn-rescan:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* ==========================================================================
+   MOOD GRID — manual selection buttons (premium, mood-colored)
+   ========================================================================== */
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  max-width: 600px;
+}
+
+/* Resolve each mood's accent color from the design tokens so every button
+   carries its own color personality. */
+.mood-grid .mood-btn[data-mood="happy"]     { --m: var(--mood-happy); }
+.mood-grid .mood-btn[data-mood="sad"]       { --m: var(--mood-sad); }
+.mood-grid .mood-btn[data-mood="angry"]     { --m: var(--mood-angry); }
+.mood-grid .mood-btn[data-mood="surprised"] { --m: var(--mood-surprised); }
+.mood-grid .mood-btn[data-mood="neutral"]   { --m: var(--mood-neutral); }
+.mood-grid .mood-btn[data-mood="naughty"]   { --m: var(--mood-naughty); }
+
+.mood-grid .mood-btn {
+  --m: var(--accent-primary);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  background: var(--card-bg);
+  /* vivid gradient ring that lights up per mood */
+  border: 1.5px solid color-mix(in srgb, var(--m) 55%, var(--border-color));
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg) var(--space-sm);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: inherit;
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: transform 0.35s var(--ease-luxe), box-shadow 0.35s var(--ease-luxe), border-color 0.35s ease, background 0.35s ease;
+}
+
+/* Soft mood-colored wash bleeding in from the edges */
+.mood-grid .mood-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  background:
+    radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--m) 28%, transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--m) 14%, transparent), transparent 70%);
+  transition: opacity 0.35s ease;
+}
+
+/* Shine sweep across the button face */
+.mood-grid .mood-btn::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -70%;
+  width: 45%;
+  height: 200%;
+  z-index: 1;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Emoji floats with its own glow shadow that takes the mood color */
+.mood-grid .mood-btn .mood-emoji {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.35s var(--ease-luxe), filter 0.35s ease;
+  filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--m) 35%, transparent));
+}
+
+.mood-grid .mood-btn .mood-label {
+  position: relative;
+  z-index: 2;
+  transition: color 0.3s ease;
+}
+
+.mood-grid .mood-btn:hover {
+  transform: translateY(-6px) scale(1.03);
+  border-color: var(--m);
+  box-shadow:
+    var(--shadow-modal),
+    0 16px 34px -8px color-mix(in srgb, var(--m) 45%, rgba(0, 0, 0, 0.2)),
+    0 0 0 4px color-mix(in srgb, var(--m) 18%, transparent);
+}
+.mood-grid .mood-btn:hover::before {
+  opacity: 1;
+}
+.mood-grid .mood-btn:hover::after {
+  opacity: 1;
+  left: 130%;
+  transition: left 0.8s ease-in-out;
+}
+.mood-grid .mood-btn:hover .mood-emoji {
+  transform: translateY(-4px) scale(1.18) rotate(-6deg);
+  filter: drop-shadow(0 10px 22px color-mix(in srgb, var(--m) 55%, transparent));
+}
+.mood-grid .mood-btn:hover .mood-label {
+  color: var(--m);
+}
+
+.mood-grid .mood-btn:active {
+  transform: translateY(-1px) scale(0.97);
+  transition-duration: 0.1s;
+}
+
+/* Focus ring for keyboard users */
+.mood-grid .mood-btn:focus-visible {
+  outline: none;
+  border-color: var(--m);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--m) 30%, transparent);
+}
+
+.manual-moods h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.mood-emoji {
+  font-size: 2.25rem;
+}
+
+.mood-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Scanner controls */
+.scanner-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 6rem;
+}
+.scanner-controls .scanner-status {
+  min-height: 2rem;
+  margin-bottom: 0;
+}
+
+/* Result card entrance animation */
+@keyframes resultReveal {
+  0% { opacity: 0; transform: translateY(24px) scale(0.96); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
