@@ -1,0 +1,415 @@
+/* ==========================================================================
+   ANIME DETAIL PAGE — hero banner, floating poster, stat tiles, genre pills
+   Owns every `.detail-*` style (moved out of player.css / components.css).
+   ========================================================================== */
+
+/* ---- Card shell ---------------------------------------------------------- */
+.detail-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  animation: detail-rise 0.7s var(--ease-out-expo) both;
+}
+
+@keyframes detail-rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Banner -------------------------------------------------------------- */
+.detail-banner {
+  position: relative;
+  height: 240px;
+  background-color: var(--bg-tertiary);
+  background-size: cover;
+  background-position: center 22%;
+}
+.detail-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(17, 17, 17, 0.35) 0%,
+    rgba(17, 17, 17, 0.08) 45%,
+    var(--card-bg) 100%
+  );
+}
+
+/* Status pill pinned over the banner */
+.detail-status-pill {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--line-glass);
+  box-shadow: var(--shadow-card);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+.detail-status-pill i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.detail-status-pill.is-airing i {
+  background: var(--mood-relaxed);
+  animation: status-pulse 2s ease-in-out infinite;
+}
+.detail-status-pill.is-finished i { background: var(--accent-deep); }
+.detail-status-pill.is-upcoming i { background: var(--mood-happy); }
+
+@keyframes status-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(39, 153, 106, 0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(39, 153, 106, 0); }
+}
+
+/* ---- Body layout --------------------------------------------------------- */
+.detail-body {
+  display: flex;
+  gap: var(--space-xl);
+  align-items: flex-start;
+  padding: 0 var(--space-2xl) var(--space-2xl);
+  margin-top: -96px; /* lets the poster overlap the banner */
+  position: relative;
+}
+
+/* ---- Sidebar: poster + actions ------------------------------------------- */
+.detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.detail-poster-wrap {
+  position: relative;
+  margin: 0;
+}
+
+.detail-poster {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  border: 4px solid var(--card-bg);
+  transition: transform 0.5s var(--ease-luxe), box-shadow 0.5s var(--ease-luxe);
+}
+.detail-poster:hover {
+  transform: translateY(-6px) rotate(-1deg);
+  box-shadow: var(--shadow-glow-strong), var(--shadow-modal);
+}
+
+/* Circular score badge sitting on the poster's corner */
+.detail-score-badge {
+  position: absolute;
+  right: -14px;
+  bottom: -14px;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  box-shadow: var(--shadow-glow-strong), inset 0 0 0 3px rgba(255, 255, 255, 0.35);
+  transform: rotate(6deg);
+  transition: transform 0.4s var(--ease-luxe);
+}
+.detail-poster-wrap:hover .detail-score-badge { transform: rotate(-4deg) scale(1.08); }
+.detail-score-badge b {
+  font-size: 1.15rem;
+  line-height: 1;
+  font-weight: 700;
+}
+.detail-score-badge small {
+  font-size: 0.58rem;
+  font-weight: 600;
+  opacity: 0.85;
+  letter-spacing: 0.06em;
+}
+
+/* Action buttons */
+.detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+.detail-actions .btn-primary,
+.detail-actions .btn-secondary {
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* Staggered entrance — the watch CTA pops in first, then the row beneath */
+.detail-actions .btn-primary { animation: detailActionIn 0.6s var(--ease-luxe) 0.15s both; }
+.detail-actions .btn-secondary { animation: detailActionIn 0.6s var(--ease-luxe) 0.3s both; }
+.detail-actions .icon-actions { animation: detailActionIn 0.6s var(--ease-luxe) 0.45s both; }
+@keyframes detailActionIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Watch Now — the hero CTA: vibrant gradient + breathing glow + slide glyph */
+.detail-actions .btn-primary {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #5db8d3 0%, #429ebc 45%, #2f8fb0 100%);
+  border-color: transparent;
+  color: #ffffff;
+  animation: detailActionIn 0.6s var(--ease-luxe) 0.15s both,
+             watchGlow 3s ease-in-out 0.8s infinite,
+             gradientShift 6s ease 1s infinite;
+  background-size: 200% 200%;
+}
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes watchGlow {
+  0%, 100% { box-shadow: 0 6px 20px rgba(66, 158, 188, 0.4), 0 0 0 0 rgba(93, 184, 211, 0); }
+  50%      { box-shadow: 0 10px 30px rgba(66, 158, 188, 0.55), 0 0 26px 3px rgba(93, 184, 211, 0.45), 0 0 0 4px rgba(93, 184, 211, 0.16); }
+}
+.detail-actions .btn-primary:hover {
+  background: linear-gradient(135deg, #6ec9e0 0%, #4aa8c6 45%, #379bc0 100%);
+  background-size: 200% 200%;
+  animation-play-state: paused;
+  color: #ffffff;
+  border-color: transparent;
+}
+.detail-actions .btn-primary::after {
+  content: '→';
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: transform 0.35s var(--ease-luxe), opacity 0.35s ease;
+  margin-left: 6px;
+}
+.detail-actions .btn-primary:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+.detail-actions .btn-primary:active {
+  animation: none;
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Search on Miruro + icon buttons lift with a colored glow */
+.detail-actions .btn-secondary {
+  border-radius: var(--radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-color));
+  color: var(--accent-deep);
+}
+.detail-actions .btn-secondary:hover,
+.detail-actions .icon-actions .btn-secondary:hover {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--card-bg));
+  color: var(--accent-deep);
+  box-shadow: 0 8px 20px rgba(117, 197, 222, 0.18);
+}
+.icon-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: 2px;
+}
+.icon-actions button {
+  flex: 1;
+  border-radius: var(--radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-color));
+  color: var(--accent-deep);
+}
+.icon-actions button:hover {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--card-bg));
+  box-shadow: 0 8px 20px rgba(117, 197, 222, 0.18);
+}
+
+/* ---- Main column --------------------------------------------------------- */
+.detail-main {
+  flex-grow: 1;
+  min-width: 0;
+  padding-top: var(--space-lg);
+}
+
+.detail-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.detail-tagline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-md);
+}
+.detail-tagline .dot-sep::before {
+  content: '•';
+  color: var(--accent-deep);
+}
+
+/* ---- Genre pills ---------------------------------------------------------- */
+.detail-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+.detail-genres .genre-tag {
+  padding: 7px 16px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  cursor: default;
+  transition: all 0.35s var(--ease-luxe);
+  animation: detail-rise 0.55s var(--ease-out-expo) both;
+}
+.detail-genres .genre-tag:hover {
+  color: var(--accent-deep);
+  border-color: var(--accent-primary);
+  background: rgba(117, 197, 222, 0.12);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-glow);
+}
+
+/* ---- Sections ------------------------------------------------------------- */
+.detail-section { margin-bottom: var(--space-lg); }
+.detail-section:last-child { margin-bottom: 0; }
+
+.detail-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+.detail-section h3::before {
+  content: '';
+  width: 26px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--accent-gradient);
+  flex-shrink: 0;
+}
+
+.detail-synopsis p {
+  color: var(--text-secondary);
+  line-height: 1.75;
+  font-size: 0.95rem;
+  white-space: pre-line;
+}
+
+/* Trailer chip under the synopsis */
+.detail-trailer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-md);
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(208, 67, 47, 0.35);
+  background: rgba(208, 67, 47, 0.06);
+  color: var(--mood-angry);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.35s var(--ease-luxe);
+}
+.detail-trailer-link:hover {
+  background: rgba(208, 67, 47, 0.12);
+  border-color: var(--mood-angry);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(208, 67, 47, 0.16);
+}
+
+/* ---- Information stat tiles ------------------------------------------------ */
+.detail-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-sm);
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  transition: all 0.35s var(--ease-luxe);
+}
+.meta-item:hover {
+  background: var(--card-bg);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.meta-label {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.meta-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+/* ---- Error state ------------------------------------------------------------ */
+.detail-error {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--text-muted);
+}
+
+/* ---- Responsive -------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .detail-body { gap: var(--space-lg); padding: 0 var(--space-xl) var(--space-xl); }
+  .detail-sidebar { width: 220px; }
+}
+
+/* ---- Dark mode tweaks ------------------------------------------------------ */
+[data-theme="dark"] .detail-status-pill {
+  background: rgba(25, 29, 34, 0.88);
+}
+[data-theme="dark"] .detail-genres .genre-tag:hover {
+  background: rgba(117, 197, 222, 0.14);
+}

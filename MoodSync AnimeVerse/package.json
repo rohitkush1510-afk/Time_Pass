@@ -1,0 +1,19 @@
+{
+  "name": "moodsync-animevision",
+  "version": "1.0.0",
+  "description": "Anime streaming platform with real-time facial mood detection",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
+  "dependencies": {
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
